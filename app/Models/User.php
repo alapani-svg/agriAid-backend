@@ -13,6 +13,14 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    public const ROLES = [
+        'farmer',
+        'lender',
+        'warehouse',
+        'buyer',
+        'government',
+    ];
+
     /**
      * @var list<string>
      */
@@ -22,6 +30,10 @@ class User extends Authenticatable
         'password',
         'phone',
         'notification_preference',
+        'role',
+        'region',
+        'organization',
+        'status',
     ];
 
     /**
@@ -51,5 +63,10 @@ class User extends Authenticatable
     public function routeNotificationForVonage($notification)
     {
         return $this->phone;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
     }
 }

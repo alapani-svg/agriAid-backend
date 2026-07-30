@@ -52,6 +52,10 @@ class OTPController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
+        if ($user->status === 'suspended') {
+            return response()->json(['error' => 'This account has been suspended.'], 403);
+        }
+
         $key = "otp:{$purpose}:{$user->id}";
         $expected = Cache::get($key);
 
@@ -65,6 +69,12 @@ class OTPController extends Controller
 
         Cache::forget($key);
 
+        if ($user->status === 'pending') {
+            $user->status = 'active';
+            $user->email_verified_at = now();
+            $user->save();
+        }
+
         $token = $user->createToken('agriAid-auth-token')->plainTextToken;
 
         return response()->json([
@@ -74,6 +84,11 @@ class OTPController extends Controller
                 'id' => (string) $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'region' => $user->region,
+                'organization' => $user->organization,
+                'status' => $user->status,
             ],
         ]);
     }
