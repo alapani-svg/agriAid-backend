@@ -7,9 +7,8 @@ use App\Models\User;
 use App\Notifications\SendLoginOtpNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -92,29 +91,9 @@ class AuthController extends Controller
     private function issueAndSendOtp(User $user, string $purpose): void
     {
         $code = (string) random_int(100000, 999999);
-        $expiresAt = now()->addMinutes(10);
+        $key = "otp:{$purpose}:{$user->id}";
 
-        // Support both uuid and integer user ids in otps table
-        DB::table('otps')->where('user_id', $user->id)->where('purpose', $purpose)->delete();
-
-        $payload = [
-            'user_id' => $user->id,
-            'code' => $code,
-            'purpose' => $purpose,
-            'expires_at' => $expiresAt,
-            'verified_at' => null,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
-
-        // If otps.id is uuid-style, set it
-        try {
-            $payload['id'] = (string) Str::uuid();
-            DB::table('otps')->insert($payload);
-        } catch (\Throwable $e) {
-            unset($payload['id']);
-            DB::table('otps')->insert($payload);
-        }
+        Cache::put($key, $code, now()->addMinutes(10));
 
         $user->notify(new SendLoginOtpNotification($code, $purpose));
     }

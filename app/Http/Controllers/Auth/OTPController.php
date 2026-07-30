@@ -7,8 +7,7 @@ use App\Models\User;
 use App\Notifications\SendLoginOtpNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class OTPController extends Controller
 {
@@ -27,33 +26,14 @@ class OTPController extends Controller
         }
 
         $code = (string) random_int(100000, 999999);
-        $expiresAt = now()->addMinutes(10);
-
-        DB::table('otps')->where('user_id', $user->id)->where('purpose', $purpose)->delete();
-
-        $payload = [
-            'user_id' => $user->id,
-            'code' => $code,
-            'purpose' => $purpose,
-            'expires_at' => $expiresAt,
-            'verified_at' => null,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
-
-        try {
-            $payload['id'] = (string) Str::uuid();
-            DB::table('otps')->insert($payload);
-        } catch (\Throwable $e) {
-            unset($payload['id']);
-            DB::table('otps')->insert($payload);
-        }
+        $key = "otp:{$purpose}:{$user->id}";
+        Cache::put($key, $code, now()->addMinutes(10));
 
         $user->notify(new SendLoginOtpNotification($code, $purpose));
 
         return response()->json([
             'message' => 'OTP generated and sent successfully',
-            'expires_at' => $expiresAt->toIso8601String(),
+            'expires_at' => now()->addMinutes(10)->toIso8601String(),
         ], 201);
     }
 
@@ -72,29 +52,18 @@ class OTPController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
-        $otp = DB::table('otps')
-            ->where('user_id', $user->id)
-            ->where('purpose', $purpose)
-            ->whereNull('verified_at')
-            ->orderByDesc('created_at')
-            ->first();
+        $key = "otp:{$purpose}:{$user->id}";
+        $expected = Cache::get($key);
 
-        if (! $otp) {
-            return response()->json(['error' => 'No valid OTP found'], 400);
+        if (! $expected) {
+            return response()->json(['error' => 'No valid OTP found or it has expired'], 400);
         }
 
-        if ($otp->expires_at && now()->greaterThan($otp->expires_at)) {
-            return response()->json(['error' => 'OTP has expired'], 400);
-        }
-
-        if ((string) $otp->code !== (string) $data['code']) {
+        if ((string) $expected !== (string) $data['code']) {
             return response()->json(['error' => 'Invalid OTP code'], 400);
         }
 
-        DB::table('otps')->where('id', $otp->id)->update([
-            'verified_at' => now(),
-            'updated_at' => now(),
-        ]);
+        Cache::forget($key);
 
         $token = $user->createToken('agriAid-auth-token')->plainTextToken;
 
