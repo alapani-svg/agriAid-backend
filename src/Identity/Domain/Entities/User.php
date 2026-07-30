@@ -1,19 +1,24 @@
 <?php
 
-namespace Src\Identity\Domain\Entities;
+namespace App\Identity\Domain\Entities;
 
-use Src\Identity\Domain\Events\UserRegistered;
-use Src\Identity\Domain\ValueObjects\Email;
-use Src\Shared\Contracts\AggregateRoot;
+use App\Identity\Domain\Events\UserRegistered;
+use App\Identity\Domain\ValueObjects\Email;
+use App\Shared\Domain\AggregateRoot;
+use Illuminate\Notifications\Notifiable;
 
 class User extends AggregateRoot
 {
+    use Notifiable;
+
     private function __construct(
         private readonly string $id,
         private string $name,
         private Email $email,
         private string $passwordHash,
         private string $role,
+        private ?string $phone = null,
+        private string $notificationPreference = 'email',
         private readonly \DateTimeImmutable $createdAt,
         private ?\DateTimeImmutable $updatedAt = null,
     ) {}
@@ -24,6 +29,8 @@ class User extends AggregateRoot
         Email $email,
         string $passwordHash,
         string $role = 'farmer',
+        ?string $phone = null,
+        string $notificationPreference = 'email',
     ): self {
         $user = new self(
             $id,
@@ -31,6 +38,8 @@ class User extends AggregateRoot
             $email,
             $passwordHash,
             $role,
+            $phone,
+            $notificationPreference,
             new \DateTimeImmutable(),
         );
 
@@ -62,6 +71,16 @@ class User extends AggregateRoot
     public function getRole(): string
     {
         return $this->role;
+    }
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function getNotificationPreference(): string
+    {
+        return $this->notificationPreference;
     }
 
     public function getCreatedAt(): \DateTimeImmutable
@@ -96,5 +115,28 @@ class User extends AggregateRoot
     {
         $this->role = $role;
         $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function updatePhone(?string $phone): void
+    {
+        $this->phone = $phone;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function updateNotificationPreference(string $preference): void
+    {
+        $this->notificationPreference = $preference;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    // Laravel Notifiable interface methods
+    public function routeNotificationForMail($notification)
+    {
+        return $this->email->getValue();
+    }
+
+    public function routeNotificationForVonage($notification)
+    {
+        return $this->phone;
     }
 }

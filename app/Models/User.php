@@ -22,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
+        'notification_preference',
     ];
 
     /**
@@ -45,5 +47,16 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // Laravel Notifiable interface methods for OTP delivery
+    public function routeNotificationForMail($notification)
+    {
+        return $this->email;
+    }
+
+    public function routeNotificationForVonage($notification)
+    {
+        return $this->phone;
     }
 }
