@@ -35,9 +35,9 @@ class SendLoginOtpNotification extends Notification
             ->subject('Your agriAid verification code')
             ->greeting('Hello '.($notifiable->name ?? 'there').',')
             ->line("Your verification code to {$action} is:")
-            ->line('**'.$this->code.'**')
-            ->line('This code expires in 10 minutes.')
+            ->line($this->code)
+            ->line('Enter this 6-digit code in the agriAid app. It expires in 10 minutes.')
             ->line('If you did not request this, you can ignore this email.')
-            ->salutation('— agriAid');
+            ->salutation('— The agriAid team');
     }
 }

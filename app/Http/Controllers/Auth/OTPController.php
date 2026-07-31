@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Notifications\SendLoginOtpNotification;
+use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class OTPController extends Controller
 {
+    public function __construct(
+        private readonly OtpService $otpService,
+    ) {}
+
     public function generate(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -25,14 +28,10 @@ class OTPController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
-        $code = (string) random_int(100000, 999999);
-        $key = "otp:{$purpose}:{$user->id}";
-        Cache::put($key, $code, now()->addMinutes(10));
-
-        $user->notify(new SendLoginOtpNotification($code, $purpose));
+        $this->otpService->issueAndSend($user, $purpose);
 
         return response()->json([
-            'message' => 'OTP generated and sent successfully',
+            'message' => 'A new 6-digit code was sent to your email.',
             'expires_at' => now()->addMinutes(10)->toIso8601String(),
         ], 201);
     }
@@ -56,18 +55,9 @@ class OTPController extends Controller
             return response()->json(['error' => 'This account has been suspended.'], 403);
         }
 
-        $key = "otp:{$purpose}:{$user->id}";
-        $expected = Cache::get($key);
-
-        if (! $expected) {
-            return response()->json(['error' => 'No valid OTP found or it has expired'], 400);
+        if (! $this->otpService->verify($user, $data['code'], $purpose)) {
+            return response()->json(['error' => 'Invalid or expired OTP code'], 400);
         }
-
-        if ((string) $expected !== (string) $data['code']) {
-            return response()->json(['error' => 'Invalid OTP code'], 400);
-        }
-
-        Cache::forget($key);
 
         if ($user->status === 'pending') {
             $user->status = 'active';

@@ -4,18 +4,20 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Notifications\SendLoginOtpNotification;
+use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    /** Roles that require an organisation access code to join. */
     private const CODED_ROLES = ['lender', 'warehouse', 'government'];
+
+    public function __construct(
+        private readonly OtpService $otpService,
+    ) {}
 
     public function register(Request $request): JsonResponse
     {
@@ -44,10 +46,10 @@ class AuthController extends Controller
             'status' => 'pending',
         ]);
 
-        $this->issueAndSendOtp($user, 'login');
+        $this->otpService->issueAndSend($user, 'login');
 
         return response()->json([
-            'message' => 'Registered. OTP sent to your email.',
+            'message' => 'Registered. A 6-digit verification code was sent to your email.',
             'user' => $this->userPayload($user),
         ], 201);
     }
@@ -73,10 +75,10 @@ class AuthController extends Controller
             ]);
         }
 
-        $this->issueAndSendOtp($user, 'login');
+        $this->otpService->issueAndSend($user, 'login');
 
         return response()->json([
-            'message' => 'OTP sent to your email.',
+            'message' => 'A 6-digit verification code was sent to your email.',
             'user' => $this->userPayload($user),
         ]);
     }
@@ -113,16 +115,6 @@ class AuthController extends Controller
                 ],
             ]);
         }
-    }
-
-    private function issueAndSendOtp(User $user, string $purpose): void
-    {
-        $code = (string) random_int(100000, 999999);
-        $key = "otp:{$purpose}:{$user->id}";
-
-        Cache::put($key, $code, now()->addMinutes(10));
-
-        $user->notify(new SendLoginOtpNotification($code, $purpose));
     }
 
     /**
