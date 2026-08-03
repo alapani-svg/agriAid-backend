@@ -5,26 +5,25 @@ namespace App\Support;
 class AgriAidBrand
 {
     /**
-     * Materialize public/images/agriAid-logo.png and return absolute path.
+     * Absolute path to the official agriAid logo used in transactional emails.
+     * Place the file at: public/images/agriAid-logo.png
      */
-    public static function logoPath(): string
+    public static function logoPath(): ?string
     {
-        $dir = public_path('images');
-        if (! is_dir($dir)) {
-            mkdir($dir, 0755, true);
+        $path = public_path('images'.DIRECTORY_SEPARATOR.'agriAid-logo.png');
+
+        if (is_file($path) && filesize($path) > 0) {
+            return $path;
         }
 
-        $path = $dir.DIRECTORY_SEPARATOR.'agriAid-logo.png';
-
-        if (! is_file($path) || filesize($path) < 500) {
-            $b64 = AgriAidLogoPart0::CHUNK.AgriAidLogoPart1::CHUNK.AgriAidLogoPart2::CHUNK;
-            $binary = base64_decode($b64, true);
-            if ($binary === false) {
-                throw new \RuntimeException('Invalid agriAid logo payload.');
+        // Common alternate filenames
+        foreach (['agriAid-logo.jpg', 'agriaid-logo.png', 'logo.png'] as $name) {
+            $alt = public_path('images'.DIRECTORY_SEPARATOR.$name);
+            if (is_file($alt) && filesize($alt) > 0) {
+                return $alt;
             }
-            file_put_contents($path, $binary);
         }
 
-        return $path;
+        return null;
     }
 }
