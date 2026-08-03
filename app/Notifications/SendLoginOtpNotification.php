@@ -32,6 +32,13 @@ class SendLoginOtpNotification extends Notification
             default => 'sign in to agriAid',
         };
 
+        $logoPath = null;
+        try {
+            $logoPath = AgriAidBrand::logoPath();
+        } catch (\Throwable $e) {
+            $logoPath = null;
+        }
+
         return (new MailMessage)
             ->subject('Your agriAid verification code')
             ->view('mail.otp', [
@@ -39,7 +46,7 @@ class SendLoginOtpNotification extends Notification
                 'code' => $this->code,
                 'action' => $action,
                 'purpose' => $this->purpose,
-                'logoPath' => AgriAidBrand::logoPath(),
+                'logoPath' => $logoPath,
             ]);
     }
 }

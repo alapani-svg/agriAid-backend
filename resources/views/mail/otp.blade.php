@@ -15,7 +15,7 @@
                         <td style="background-color:#026e00;padding:28px 32px;text-align:center;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
                                 <tr>
-                                    <td style="vertical-align:middle;">
+                                    <td style="vertical-align:middle;text-align:center;">
                                         @php
                                             $logoSrc = null;
                                             try {
@@ -29,20 +29,16 @@
                                         @if($logoSrc)
                                             <img
                                                 src="{{ $logoSrc }}"
-                                                alt="agriAid logo"
-                                                width="56"
-                                                height="56"
-                                                style="display:block;width:56px;height:56px;border-radius:14px;border:0;background:#ffffff;object-fit:contain;"
+                                                alt="agriAid"
+                                                width="72"
+                                                height="72"
+                                                style="display:block;margin:0 auto;width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,0.85);background:#ffffff;"
                                             />
-                                        @else
-                                            <div style="width:56px;height:56px;border-radius:14px;background-color:#ffffff;text-align:center;line-height:56px;font-weight:800;color:#026e00;font-size:18px;">aA</div>
                                         @endif
-                                    </td>
-                                    <td style="padding-left:14px;text-align:left;vertical-align:middle;">
-                                        <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:#ffffff;line-height:1.1;">
+                                        <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:#ffffff;line-height:1.1;margin-top:12px;">
                                             agriAid
                                         </div>
-                                        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#b8f5b8;margin-top:5px;">
+                                        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#b8f5b8;margin-top:6px;">
                                             Verifiable credit for producers
                                         </div>
                                     </td>
@@ -111,6 +107,19 @@
 
                     <tr>
                         <td style="background-color:#0a160a;padding:20px 32px;text-align:center;">
+                            @php
+                                $footerLogo = null;
+                                try {
+                                    if (!empty($logoPath) && is_file($logoPath)) {
+                                        $footerLogo = $message->embed($logoPath);
+                                    }
+                                } catch (\Throwable $e) {
+                                    $footerLogo = null;
+                                }
+                            @endphp
+                            @if($footerLogo)
+                                <img src="{{ $footerLogo }}" alt="agriAid" width="40" height="40" style="display:block;margin:0 auto 10px auto;width:40px;height:40px;border-radius:50%;" />
+                            @endif
                             <p style="margin:0 0 6px 0;font-size:15px;font-weight:800;color:#ffffff;">agriAid</p>
                             <p style="margin:0 0 10px 0;font-size:11px;line-height:1.5;color:rgba(255,255,255,0.65);">
                                 Intelligent agricultural visibility &amp; financing for Cameroon producers
