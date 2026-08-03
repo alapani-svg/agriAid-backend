@@ -83,6 +83,70 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Request a password-reset OTP. Always returns the same message
+     * so callers cannot probe which emails exist.
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+
+        if ($user && $user->status !== 'suspended') {
+            $this->otpService->issueAndSend($user, 'password_reset');
+        }
+
+        return response()->json([
+            'message' => 'If an account exists for that email, a 6-digit reset code was sent.',
+            'email' => $data['email'],
+        ]);
+    }
+
+    /**
+     * Verify reset OTP and set a new password.
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'digits:6'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'email' => ['We could not reset the password for this email.'],
+            ]);
+        }
+
+        if ($user->status === 'suspended') {
+            throw ValidationException::withMessages([
+                'email' => ['This account has been suspended. Contact support.'],
+            ]);
+        }
+
+        if (! $this->otpService->verify($user, $data['code'], 'password_reset')) {
+            throw ValidationException::withMessages([
+                'code' => ['Invalid or expired reset code.'],
+            ]);
+        }
+
+        $user->password = $data['password'];
+        $user->save();
+
+        // Invalidate existing API tokens after password change
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Password updated. You can sign in with your new password.',
+        ]);
+    }
+
     public function logout(Request $request): JsonResponse
     {
         $request->user()?->currentAccessToken()?->delete();
