@@ -5,8 +5,12 @@ namespace App\Support;
 class AgriAidBrand
 {
     /**
-     * Official circular agriAid logo for transactional emails.
-     * Writes public/images/agriAid-logo.png from embedded payload if missing.
+     * Path to the official circular agriAid logo for emails.
+     *
+     * Place your exact logo file at:
+     *   public/images/agriAid-logo.png
+     *
+     * (green circle, hand + seedling, white "agriAid" script)
      */
     public static function logoPath(): ?string
     {
@@ -15,18 +19,20 @@ class AgriAidBrand
             mkdir($dir, 0755, true);
         }
 
-        $path = $dir.DIRECTORY_SEPARATOR.'agriAid-logo.png';
+        $candidates = [
+            'agriAid-logo.png',
+            'agriaid-logo.png',
+            'agriAid-logo.jpg',
+            'logo.png',
+        ];
 
-        // Prefer a manually placed high-res file; otherwise materialize embedded logo
-        if (! is_file($path) || filesize($path) < 500) {
-            $b64 = AgriAidLogoPart0::CHUNK.AgriAidLogoPart1::CHUNK.AgriAidLogoPart2::CHUNK;
-            $binary = base64_decode($b64, true);
-            if ($binary === false) {
-                return null;
+        foreach ($candidates as $name) {
+            $path = $dir.DIRECTORY_SEPARATOR.$name;
+            if (is_file($path) && filesize($path) > 500) {
+                return $path;
             }
-            file_put_contents($path, $binary);
         }
 
-        return is_file($path) ? $path : null;
+        return null;
     }
 }

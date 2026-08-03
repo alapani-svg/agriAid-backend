@@ -11,39 +11,36 @@
             <td align="center">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background-color:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #d8eedc;box-shadow:0 12px 40px rgba(2,110,0,0.08);">
 
+                    {{-- Header with exact agriAid circular logo --}}
                     <tr>
-                        <td style="background-color:#026e00;padding:28px 32px;text-align:center;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
-                                <tr>
-                                    <td style="vertical-align:middle;text-align:center;">
-                                        @php
-                                            $logoSrc = null;
-                                            try {
-                                                if (!empty($logoPath) && is_file($logoPath)) {
-                                                    $logoSrc = $message->embed($logoPath);
-                                                }
-                                            } catch (\Throwable $e) {
-                                                $logoSrc = null;
-                                            }
-                                        @endphp
-                                        @if($logoSrc)
-                                            <img
-                                                src="{{ $logoSrc }}"
-                                                alt="agriAid"
-                                                width="72"
-                                                height="72"
-                                                style="display:block;margin:0 auto;width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,0.85);background:#ffffff;"
-                                            />
-                                        @endif
-                                        <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:#ffffff;line-height:1.1;margin-top:12px;">
-                                            agriAid
-                                        </div>
-                                        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#b8f5b8;margin-top:6px;">
-                                            Verifiable credit for producers
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
+                        <td style="background-color:#026e00;padding:32px 32px 28px 32px;text-align:center;">
+                            @php
+                                $logoSrc = null;
+                                try {
+                                    if (!empty($logoPath) && is_file($logoPath)) {
+                                        $logoSrc = $message->embed($logoPath);
+                                    }
+                                } catch (\Throwable $e) {
+                                    $logoSrc = null;
+                                }
+                            @endphp
+
+                            @if($logoSrc)
+                                <img
+                                    src="{{ $logoSrc }}"
+                                    alt="agriAid logo"
+                                    width="88"
+                                    height="88"
+                                    style="display:block;margin:0 auto 14px auto;width:88px;height:88px;border-radius:50%;border:3px solid #ffffff;background:#ffffff;"
+                                />
+                            @endif
+
+                            <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:#ffffff;line-height:1.1;">
+                                agriAid
+                            </div>
+                            <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#b8f5b8;margin-top:8px;">
+                                Verifiable credit for producers
+                            </div>
                         </td>
                     </tr>
 
@@ -106,7 +103,7 @@
                     </tr>
 
                     <tr>
-                        <td style="background-color:#0a160a;padding:20px 32px;text-align:center;">
+                        <td style="background-color:#0a160a;padding:22px 32px;text-align:center;">
                             @php
                                 $footerLogo = null;
                                 try {
@@ -118,7 +115,13 @@
                                 }
                             @endphp
                             @if($footerLogo)
-                                <img src="{{ $footerLogo }}" alt="agriAid" width="40" height="40" style="display:block;margin:0 auto 10px auto;width:40px;height:40px;border-radius:50%;" />
+                                <img
+                                    src="{{ $footerLogo }}"
+                                    alt="agriAid"
+                                    width="44"
+                                    height="44"
+                                    style="display:block;margin:0 auto 12px auto;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);"
+                                />
                             @endif
                             <p style="margin:0 0 6px 0;font-size:15px;font-weight:800;color:#ffffff;">agriAid</p>
                             <p style="margin:0 0 10px 0;font-size:11px;line-height:1.5;color:rgba(255,255,255,0.65);">
