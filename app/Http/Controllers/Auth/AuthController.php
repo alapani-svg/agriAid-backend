@@ -50,6 +50,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Registered. A 6-digit verification code was sent to your email.',
+            'requires_otp' => true,
             'user' => $this->userPayload($user),
         ], 201);
     }
@@ -75,18 +76,36 @@ class AuthController extends Controller
             ]);
         }
 
+        // Already verified once → email + password only (no OTP)
+        $alreadyVerified = $user->status === 'active'
+            || $user->email_verified_at !== null;
+
+        if ($alreadyVerified) {
+            if ($user->status !== 'active') {
+                $user->status = 'active';
+                $user->save();
+            }
+
+            $token = $user->createToken('agriAid-auth-token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Signed in successfully.',
+                'requires_otp' => false,
+                'token' => $token,
+                'user' => $this->userPayload($user),
+            ]);
+        }
+
+        // First-time / pending accounts still need email OTP
         $this->otpService->issueAndSend($user, 'login');
 
         return response()->json([
             'message' => 'A 6-digit verification code was sent to your email.',
+            'requires_otp' => true,
             'user' => $this->userPayload($user),
         ]);
     }
 
-    /**
-     * Request a password-reset OTP. Always returns the same message
-     * so callers cannot probe which emails exist.
-     */
     public function forgotPassword(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -105,9 +124,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Verify reset OTP and set a new password.
-     */
     public function resetPassword(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -139,7 +155,6 @@ class AuthController extends Controller
         $user->password = $data['password'];
         $user->save();
 
-        // Invalidate existing API tokens after password change
         $user->tokens()->delete();
 
         return response()->json([
