@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Support\AgriAidBrand;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -33,6 +34,13 @@ class SendLoginOtpNotification extends Notification
 
         $name = $notifiable->name ?? 'there';
 
+        // Ensure logo file exists under public/images before the view embeds it
+        try {
+            AgriAidBrand::logoPath();
+        } catch (\Throwable $e) {
+            // View will fall back to text wordmark if embed fails
+        }
+
         return (new MailMessage)
             ->subject('Your agriAid verification code')
             ->view('mail.otp', [
@@ -40,6 +48,7 @@ class SendLoginOtpNotification extends Notification
                 'code' => $this->code,
                 'action' => $action,
                 'purpose' => $this->purpose,
+                'logoPath' => public_path('images/agriAid-logo.png'),
             ]);
     }
 }

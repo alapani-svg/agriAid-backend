@@ -16,10 +16,27 @@
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
                                 <tr>
                                     <td style="vertical-align:middle;">
-                                        {{-- Inline SVG logo (works without external hosting) --}}
-                                        <div style="width:52px;height:52px;border-radius:16px;background-color:#ffffff;text-align:center;line-height:52px;">
-                                            <span style="display:inline-block;font-size:28px;line-height:52px;">🌱</span>
-                                        </div>
+                                        @php
+                                            $logoSrc = null;
+                                            try {
+                                                if (!empty($logoPath) && is_file($logoPath)) {
+                                                    $logoSrc = $message->embed($logoPath);
+                                                }
+                                            } catch (\Throwable $e) {
+                                                $logoSrc = null;
+                                            }
+                                        @endphp
+                                        @if($logoSrc)
+                                            <img
+                                                src="{{ $logoSrc }}"
+                                                alt="agriAid logo"
+                                                width="56"
+                                                height="56"
+                                                style="display:block;width:56px;height:56px;border-radius:14px;border:0;background:#ffffff;object-fit:contain;"
+                                            />
+                                        @else
+                                            <div style="width:56px;height:56px;border-radius:14px;background-color:#ffffff;text-align:center;line-height:56px;font-weight:800;color:#026e00;font-size:18px;">aA</div>
+                                        @endif
                                     </td>
                                     <td style="padding-left:14px;text-align:left;vertical-align:middle;">
                                         <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:#ffffff;line-height:1.1;">
