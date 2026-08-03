@@ -42,9 +42,11 @@ class OTPController extends Controller
             'user_id' => ['required'],
             'code' => ['required', 'digits:6'],
             'purpose' => ['nullable', 'in:login,password_reset,email_verification,phone_verification'],
+            'remember' => ['sometimes', 'boolean'],
         ]);
 
         $purpose = $data['purpose'] ?? 'login';
+        $remember = (bool) ($data['remember'] ?? false);
         $user = User::find($data['user_id']);
 
         if (! $user) {
@@ -65,11 +67,13 @@ class OTPController extends Controller
             $user->save();
         }
 
-        $token = $user->createToken('agriAid-auth-token')->plainTextToken;
+        $access = AuthController::issueToken($user, $remember);
 
         return response()->json([
             'message' => 'OTP verified successfully',
-            'token' => $token,
+            'token' => $access->plainTextToken,
+            'remember' => $remember,
+            'token_expires_at' => $access->accessToken->expires_at?->toIso8601String(),
             'user' => [
                 'id' => (string) $user->id,
                 'name' => $user->name,

@@ -10,10 +10,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\NewAccessToken;
 
 class AuthController extends Controller
 {
     private const CODED_ROLES = ['lender', 'warehouse', 'government'];
+
+    /** Session-only token lifetime when Remember Me is off. */
+    private const TOKEN_HOURS_SHORT = 24;
+
+    /** Token lifetime when Remember Me is on. */
+    private const TOKEN_DAYS_REMEMBER = 30;
 
     public function __construct(
         private readonly OtpService $otpService,
@@ -60,7 +67,10 @@ class AuthController extends Controller
         $data = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'remember' => ['sometimes', 'boolean'],
         ]);
+
+        $remember = (bool) ($data['remember'] ?? false);
 
         $user = User::where('email', $data['email'])->first();
 
@@ -76,7 +86,6 @@ class AuthController extends Controller
             ]);
         }
 
-        // Already verified once → email + password only (no OTP)
         $alreadyVerified = $user->status === 'active'
             || $user->email_verified_at !== null;
 
@@ -86,22 +95,24 @@ class AuthController extends Controller
                 $user->save();
             }
 
-            $token = $user->createToken('agriAid-auth-token')->plainTextToken;
+            $access = $this->issueToken($user, $remember);
 
             return response()->json([
                 'message' => 'Signed in successfully.',
                 'requires_otp' => false,
-                'token' => $token,
+                'token' => $access->plainTextToken,
+                'remember' => $remember,
+                'token_expires_at' => $access->accessToken->expires_at?->toIso8601String(),
                 'user' => $this->userPayload($user),
             ]);
         }
 
-        // First-time / pending accounts still need email OTP
         $this->otpService->issueAndSend($user, 'login');
 
         return response()->json([
             'message' => 'A 6-digit verification code was sent to your email.',
             'requires_otp' => true,
+            'remember' => $remember,
             'user' => $this->userPayload($user),
         ]);
     }
@@ -172,6 +183,20 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json($this->userPayload($request->user()));
+    }
+
+    /**
+     * Issue a Sanctum personal access token with optional Remember Me lifetime.
+     */
+    public static function issueToken(User $user, bool $remember = false): NewAccessToken
+    {
+        $name = $remember ? 'agriAid-auth-token-remember' : 'agriAid-auth-token';
+
+        $expiresAt = $remember
+            ? now()->addDays(self::TOKEN_DAYS_REMEMBER)
+            : now()->addHours(self::TOKEN_HOURS_SHORT);
+
+        return $user->createToken($name, ['*'], $expiresAt);
     }
 
     private function assertAccessCode(string $role, ?string $code): void
