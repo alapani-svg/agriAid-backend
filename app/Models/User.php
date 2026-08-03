@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -19,11 +20,9 @@ class User extends Authenticatable
         'warehouse',
         'buyer',
         'government',
+        'admin',
     ];
 
-    /**
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -36,23 +35,22 @@ class User extends Authenticatable
         'status',
     ];
 
-    /**
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function farmer(): HasOne
+    {
+        return $this->hasOne(Farmer::class);
     }
 
     public function routeNotificationForMail($notification)
