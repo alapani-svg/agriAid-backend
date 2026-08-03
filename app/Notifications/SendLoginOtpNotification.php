@@ -31,13 +31,15 @@ class SendLoginOtpNotification extends Notification
             default => 'sign in to agriAid',
         };
 
+        $name = $notifiable->name ?? 'there';
+
         return (new MailMessage)
             ->subject('Your agriAid verification code')
-            ->greeting('Hello '.($notifiable->name ?? 'there').',')
-            ->line("Your verification code to {$action} is:")
-            ->line($this->code)
-            ->line('Enter this 6-digit code in the agriAid app. It expires in 10 minutes.')
-            ->line('If you did not request this, you can ignore this email.')
-            ->salutation('— The agriAid team');
+            ->view('mail.otp', [
+                'name' => $name,
+                'code' => $this->code,
+                'action' => $action,
+                'purpose' => $this->purpose,
+            ]);
     }
 }
