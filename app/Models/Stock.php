@@ -7,23 +7,34 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Stock extends Model
 {
+    public const STATUSES = ['in_stock', 'reserved', 'withdrawn', 'sold'];
+
     protected $fillable = [
-        'farmer_id',
-        'crop',
+        'warehouse_id',
+        'harvest_id',
+        'crop_type',
         'quantity_kg',
-        'unit',
-        'location',
+        'capacity_used',
+        'capacity_total',
+        'entry_date',
+        'exit_date',
+        'status',
+        'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'quantity_kg' => 'decimal:2',
+            'capacity_used' => 'decimal:2',
+            'capacity_total' => 'decimal:2',
+            'entry_date' => 'date',
+            'exit_date' => 'date',
         ];
     }
 
-    public function farmer(): BelongsTo
+    public function harvest(): BelongsTo
     {
-        return $this->belongsTo(Farmer::class);
+        return $this->belongsTo(Harvest::class);
     }
 }

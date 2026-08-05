@@ -7,41 +7,32 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Harvest extends Model
 {
-    public const STATUSES = ['recorded', 'verified', 'in_transit'];
+    public const STATUSES = ['harvested', 'in_transit', 'stored', 'sold'];
 
     protected $fillable = [
         'farmer_id',
-        'crop',
-        'mass_kg',
-        'quality_pct',
-        'price_per_kg',
+        'warehouse_id',
+        'crop_type',
+        'quantity_kg',
+        'quality_grade',
+        'harvest_date',
+        'storage_date',
         'status',
-        'village',
-        'region',
-        'harvested_on',
         'notes',
     ];
 
     protected function casts(): array
     {
         return [
-            'mass_kg' => 'decimal:2',
-            'price_per_kg' => 'decimal:2',
-            'harvested_on' => 'date',
+            'quantity_kg' => 'decimal:2',
+            'quality_grade' => 'decimal:2',
+            'harvest_date' => 'date',
+            'storage_date' => 'date',
         ];
     }
 
     public function farmer(): BelongsTo
     {
         return $this->belongsTo(Farmer::class);
-    }
-
-    public function estimatedValue(): ?float
-    {
-        if ($this->price_per_kg === null) {
-            return null;
-        }
-
-        return (float) $this->mass_kg * (float) $this->price_per_kg;
     }
 }

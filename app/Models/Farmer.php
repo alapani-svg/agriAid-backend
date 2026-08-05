@@ -10,19 +10,23 @@ class Farmer extends Model
 {
     protected $fillable = [
         'user_id',
-        'village',
+        'farm_name',
+        'farm_size',
+        'crops',
         'region',
-        'farm_size_hectares',
-        'crop_types',
-        'cig_group',
-        'notes',
+        'village',
+        'phone',
+        'address',
+        'cooperative_name',
+        'cooperative_id',
+        'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'crop_types' => 'array',
-            'farm_size_hectares' => 'decimal:2',
+            'crops' => 'array',
+            'farm_size' => 'decimal:2',
         ];
     }
 
@@ -34,10 +38,5 @@ class Farmer extends Model
     public function harvests(): HasMany
     {
         return $this->hasMany(Harvest::class);
-    }
-
-    public function stocks(): HasMany
-    {
-        return $this->hasMany(Stock::class);
     }
 }
