@@ -2,9 +2,8 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\OTPController;
-use App\Http\Controllers\Operations\FarmerController;
-use App\Http\Controllers\Operations\HarvestController;
-use App\Http\Controllers\Operations\StockController;
+use App\Farmer\Presentation\Controllers\FarmerController;
+use App\Farm\Presentation\Controllers\HarvestController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -19,14 +18,18 @@ Route::post('/otp/verify', [OTPController::class, 'verify']);
 
 /*
 | Module 2 — Activity documentation & stock tracking (Developer 1)
+| Farmer profile, Harvest registration, Stock tracking
 */
-Route::middleware(['auth:sanctum', 'role:farmer,admin'])->prefix('operations')->group(function () {
-    Route::get('/farmer/me', [FarmerController::class, 'me']);
-    Route::put('/farmer/me', [FarmerController::class, 'update']);
+Route::middleware('auth:sanctum')->group(function () {
+    // Farmer profile endpoints (admin only for registration, farmer/admin for others)
+    Route::post('/farmers', [FarmerController::class, 'register'])->middleware('role:admin');
+    Route::get('/farmers/me', [FarmerController::class, 'me'])->middleware('role:farmer,admin');
+    Route::get('/farmers/{id}', [FarmerController::class, 'show'])->middleware('role:farmer,admin');
+    Route::put('/farmers/{id}', [FarmerController::class, 'update'])->middleware('role:farmer,admin');
 
-    Route::get('/harvests', [HarvestController::class, 'index']);
-    Route::post('/harvests', [HarvestController::class, 'store']);
-    Route::get('/harvests/{id}', [HarvestController::class, 'show']);
-
-    Route::get('/stocks', [StockController::class, 'index']);
+    // Harvest endpoints (farmer only)
+    Route::get('/harvests', [HarvestController::class, 'index'])->middleware('role:farmer,admin');
+    Route::post('/harvests', [HarvestController::class, 'record'])->middleware('role:farmer');
+    Route::get('/harvests/{id}', [HarvestController::class, 'show'])->middleware('role:farmer,admin');
+    Route::post('/harvests/{id}/send-to-warehouse', [HarvestController::class, 'sendToWarehouse'])->middleware('role:farmer');
 });
