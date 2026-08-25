@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('harvests', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('farmer_id')->constrained('farmers')->onDelete('cascade');
-            $table->unsignedBigInteger('warehouse_id')->nullable(); // FK added later when warehouses table exists
+            $table->uuid('id')->primary();
+            $table->foreignUuid('farmer_id')->constrained('farmers')->onDelete('cascade');
+            $table->uuid('warehouse_id')->nullable(); // FK added later when warehouses table exists
             $table->string('crop_type');
             $table->decimal('quantity_kg', 12, 2);
             $table->decimal('quality_grade', 3, 2)->nullable(); // 1.0 to 5.0

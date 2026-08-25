@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    // Used by HarvestPhotoVerificationService to AI-verify harvest photos against declared quantities.
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'vision_model' => env('OPENAI_VISION_MODEL', 'gpt-4o-mini'),
+    ],
+
 ];

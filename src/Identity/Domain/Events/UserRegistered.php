@@ -1,19 +1,23 @@
 <?php
 
-namespace Src\Identity\Domain\Events;
+namespace App\Identity\Domain\Events;
 
-use DateTimeImmutable;
-use Src\Shared\Contracts\DomainEvent;
+use App\Identity\Domain\Entities\User;
+use App\Shared\Domain\DomainEvent;
 
 final readonly class UserRegistered implements DomainEvent
 {
     public function __construct(
-        public string $userId,
-        public string $email
+        private User $user,
     ) {}
 
-    public function occurredOn(): DateTimeImmutable
+    public function getUser(): User
     {
-        return new DateTimeImmutable();
+        return $this->user;
+    }
+
+    public function occurredAt(): \DateTimeImmutable
+    {
+        return $this->user->getCreatedAt();
     }
 }

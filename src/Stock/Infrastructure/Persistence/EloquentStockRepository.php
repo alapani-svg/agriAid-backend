@@ -32,6 +32,10 @@ class EloquentStockRepository implements StockRepositoryInterface
         $eloquentStock->exit_date = $stock->getExitDate()?->format('Y-m-d');
         $eloquentStock->status = $stock->getStatus()->toString();
         $eloquentStock->notes = $stock->getNotes();
+        $eloquentStock->photo_path = $stock->getPhotoPath();
+        $eloquentStock->ai_estimated_quantity_kg = $stock->getAiEstimatedQuantityKg();
+        $eloquentStock->ai_analysis_notes = $stock->getAiAnalysisNotes();
+        $eloquentStock->verification_status = $stock->getVerificationStatus();
         $eloquentStock->created_at = $stock->getCreatedAt()->format('Y-m-d H:i:s');
         $eloquentStock->updated_at = $stock->getUpdatedAt()?->format('Y-m-d H:i:s');
 
@@ -74,6 +78,13 @@ class EloquentStockRepository implements StockRepositoryInterface
         return $eloquentStocks->map(fn ($eloquent) => $this->toDomain($eloquent))->toArray();
     }
 
+    public function findAll(): array
+    {
+        $eloquentStocks = EloquentStock::orderByDesc('created_at')->get();
+
+        return $eloquentStocks->map(fn ($eloquent) => $this->toDomain($eloquent))->toArray();
+    }
+
     public function delete(Stock $stock): void
     {
         EloquentStock::where('id', $stock->getId())->delete();
@@ -106,6 +117,15 @@ class EloquentStockRepository implements StockRepositoryInterface
 
         if ($eloquent->status === StockStatus::SOLD->value) {
             $stock->sell();
+        }
+
+        if ($eloquent->photo_path !== null || $eloquent->verification_status !== 'unavailable') {
+            $stock->attachPhotoVerification(
+                photoPath: $eloquent->photo_path,
+                aiEstimatedQuantityKg: $eloquent->ai_estimated_quantity_kg !== null ? (float) $eloquent->ai_estimated_quantity_kg : null,
+                aiAnalysisNotes: $eloquent->ai_analysis_notes,
+                verificationStatus: $eloquent->verification_status,
+            );
         }
 
         return $stock;

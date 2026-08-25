@@ -4,17 +4,20 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\Application\Services\NotificationApplicationService;
+use App\Notifications\Domain\ValueObjects\NotificationType;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\NewAccessToken;
 
 class AuthController extends Controller
 {
-    private const CODED_ROLES = ['lender', 'warehouse', 'government'];
+    private const CODED_ROLES = ['lender', 'warehouse', 'government', 'admin'];
 
     /** Session-only token lifetime when Remember Me is off. */
     private const TOKEN_HOURS_SHORT = 24;
@@ -24,6 +27,7 @@ class AuthController extends Controller
 
     public function __construct(
         private readonly OtpService $otpService,
+        private readonly NotificationApplicationService $notificationService,
     ) {}
 
     public function register(Request $request): JsonResponse
@@ -36,7 +40,7 @@ class AuthController extends Controller
             'role' => ['required', Rule::in(User::ROLES)],
             'region' => ['required', 'string', 'max:60'],
             'organization' => ['nullable', 'string', 'max:255'],
-            'access_code' => ['nullable', 'string', 'max:64'],
+            'access_code' => ['nullable', 'string', 'max:128'],
         ]);
 
         $this->assertAccessCode($data['role'], $data['access_code'] ?? null);
@@ -54,6 +58,15 @@ class AuthController extends Controller
         ]);
 
         $this->otpService->issueAndSend($user, 'login');
+
+        $this->notificationService->notify(
+            user: $user,
+            type: NotificationType::WELCOME,
+            title: 'Welcome to agriAid',
+            message: 'Complete your profile and record your first harvest to get started.',
+            deepLink: '/settings',
+            idempotencyKey: "welcome:{$user->id}",
+        );
 
         return response()->json([
             'message' => 'Registered. A 6-digit verification code was sent to your email.',
@@ -185,6 +198,145 @@ class AuthController extends Controller
         return response()->json($this->userPayload($request->user()));
     }
 
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'notification_preference' => ['sometimes', Rule::in(['email', 'sms', 'both', 'none'])],
+            'region' => ['sometimes', 'string', 'max:60'],
+            'organization' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user = $request->user();
+        $user->fill($data);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => $this->userPayload($user),
+        ]);
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
+            ]);
+        }
+
+        $user->password = $data['password'];
+        $user->save();
+
+        return response()->json(['message' => 'Password updated successfully.']);
+    }
+
+    public function sessions(Request $request): JsonResponse
+    {
+        $currentId = $request->user()->currentAccessToken()?->id;
+
+        $tokens = $request->user()->tokens()->orderByDesc('last_used_at')->get()->map(fn ($token) => [
+            'id' => (string) $token->id,
+            'name' => $token->name,
+            'last_used_at' => $token->last_used_at?->toIso8601String(),
+            'created_at' => $token->created_at?->toIso8601String(),
+            'is_current' => (string) $token->id === (string) $currentId,
+        ]);
+
+        return response()->json(['sessions' => $tokens]);
+    }
+
+    public function revokeSession(Request $request, string $tokenId): JsonResponse
+    {
+        $deleted = $request->user()->tokens()->where('id', $tokenId)->delete();
+
+        if (! $deleted) {
+            return response()->json(['error' => 'Session not found'], 404);
+        }
+
+        return response()->json(['message' => 'Session revoked.']);
+    }
+
+    public function revokeOtherSessions(Request $request): JsonResponse
+    {
+        $currentId = $request->user()->currentAccessToken()?->id;
+
+        $request->user()->tokens()->where('id', '!=', $currentId)->delete();
+
+        return response()->json(['message' => 'All other sessions were signed out.']);
+    }
+
+    public function destroyAccount(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['The provided password is incorrect.'],
+            ]);
+        }
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+        }
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json(['message' => 'Your account has been permanently deleted.']);
+    }
+
+    public function updateAvatar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+        ]);
+
+        $user = $request->user();
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+
+        $user->avatar_path = $path;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile picture updated.',
+            'user' => $this->userPayload($user),
+        ]);
+    }
+
+    public function deleteAvatar(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+            $user->avatar_path = null;
+            $user->save();
+        }
+
+        return response()->json([
+            'message' => 'Profile picture removed.',
+            'user' => $this->userPayload($user),
+        ]);
+    }
+
     /**
      * Issue a Sanctum personal access token with optional Remember Me lifetime.
      */
@@ -209,6 +361,7 @@ class AuthController extends Controller
             'lender' => env('ACCESS_CODE_LENDER', 'LEND-2026'),
             'warehouse' => env('ACCESS_CODE_WAREHOUSE', 'WH-2026'),
             'government' => env('ACCESS_CODE_GOV', 'GOV-2026'),
+            'admin' => env('ACCESS_CODE_ADMIN', 'c3eb7dab-ed1e-4c77-92a3-d28e485ddaec'),
             default => null,
         };
 
@@ -235,6 +388,8 @@ class AuthController extends Controller
             'region' => $user->region,
             'organization' => $user->organization,
             'status' => $user->status,
+            'avatar_url' => $user->avatarUrl(),
+            'notification_preference' => $user->notification_preference,
         ];
     }
 }

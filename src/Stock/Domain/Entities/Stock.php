@@ -26,6 +26,10 @@ final class Stock extends AggregateRoot
         private ?string $notes,
         private readonly \DateTimeImmutable $createdAt,
         private ?\DateTimeImmutable $updatedAt = null,
+        private ?string $photoPath = null,
+        private ?float $aiEstimatedQuantityKg = null,
+        private ?string $aiAnalysisNotes = null,
+        private string $verificationStatus = 'unavailable',
     ) {}
 
     public static function create(
@@ -104,6 +108,24 @@ final class Stock extends AggregateRoot
         $this->updatedAt = new \DateTimeImmutable();
     }
 
+    /**
+     * Attaches the result of the AI photo-verification pass — comparing the
+     * declared stock quantity against what a vision model can see in the
+     * uploaded goods photo, to help keep declarations honest.
+     */
+    public function attachPhotoVerification(
+        ?string $photoPath,
+        ?float $aiEstimatedQuantityKg,
+        ?string $aiAnalysisNotes,
+        string $verificationStatus,
+    ): void {
+        $this->photoPath = $photoPath;
+        $this->aiEstimatedQuantityKg = $aiEstimatedQuantityKg;
+        $this->aiAnalysisNotes = $aiAnalysisNotes;
+        $this->verificationStatus = $verificationStatus;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
     // Getters
     public function getId(): string
     {
@@ -153,6 +175,26 @@ final class Stock extends AggregateRoot
     public function getNotes(): ?string
     {
         return $this->notes;
+    }
+
+    public function getPhotoPath(): ?string
+    {
+        return $this->photoPath;
+    }
+
+    public function getAiEstimatedQuantityKg(): ?float
+    {
+        return $this->aiEstimatedQuantityKg;
+    }
+
+    public function getAiAnalysisNotes(): ?string
+    {
+        return $this->aiAnalysisNotes;
+    }
+
+    public function getVerificationStatus(): string
+    {
+        return $this->verificationStatus;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

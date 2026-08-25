@@ -1,0 +1,53 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: agriaid-app
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-agriaid}
+      DB_USERNAME: ${DB_USERNAME:-agriaid}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      RUN_MIGRATIONS: 1
+    env_file:
+      - .env
+    volumes:
+      - storage_data:/var/www/html/storage/app/public
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - agriaid
+
+  mysql:
+    image: mysql:8.0
+    container_name: agriaid-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-agriaid}
+      MYSQL_USER: ${DB_USERNAME:-agriaid}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-secret}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agriaid
+
+volumes:
+  mysql_data:
+  storage_data:
+
+networks:
+  agriaid:
+    driver: bridge

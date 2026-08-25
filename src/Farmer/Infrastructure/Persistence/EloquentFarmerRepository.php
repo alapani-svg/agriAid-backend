@@ -76,6 +76,13 @@ class EloquentFarmerRepository implements FarmerRepositoryInterface
         return $eloquentFarmers->map(fn ($eloquent) => $this->toDomain($eloquent))->toArray();
     }
 
+    public function findAll(): array
+    {
+        $eloquentFarmers = EloquentFarmer::orderByDesc('created_at')->get();
+
+        return $eloquentFarmers->map(fn ($eloquent) => $this->toDomain($eloquent))->toArray();
+    }
+
     public function delete(Farmer $farmer): void
     {
         EloquentFarmer::where('id', $farmer->getId())->delete();

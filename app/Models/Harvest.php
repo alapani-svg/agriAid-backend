@@ -9,6 +9,10 @@ class Harvest extends Model
 {
     public const STATUSES = ['harvested', 'in_transit', 'stored', 'sold'];
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'farmer_id',
         'warehouse_id',
@@ -19,6 +23,10 @@ class Harvest extends Model
         'storage_date',
         'status',
         'notes',
+        'photo_path',
+        'ai_estimated_quantity_kg',
+        'ai_analysis_notes',
+        'verification_status',
     ];
 
     protected function casts(): array
@@ -28,6 +36,7 @@ class Harvest extends Model
             'quality_grade' => 'decimal:2',
             'harvest_date' => 'date',
             'storage_date' => 'date',
+            'ai_estimated_quantity_kg' => 'decimal:2',
         ];
     }
 

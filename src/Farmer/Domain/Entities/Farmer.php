@@ -4,6 +4,7 @@ namespace App\Farmer\Domain\Entities;
 
 use App\Farmer\Domain\ValueObjects\CropTypes;
 use App\Farmer\Domain\ValueObjects\FarmSize;
+use App\Farmer\Domain\ValueObjects\FarmerStatus;
 use App\Farmer\Domain\ValueObjects\Region;
 use App\Shared\Domain\AggregateRoot;
 use App\Farmer\Domain\Events\FarmerRegistered;

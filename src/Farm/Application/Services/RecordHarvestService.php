@@ -15,7 +15,8 @@ class RecordHarvestService
 {
     public function __construct(
         private readonly HarvestRepositoryInterface $harvestRepository,
-        private readonly FarmerRepositoryInterface $farmerRepository
+        private readonly FarmerRepositoryInterface $farmerRepository,
+        private readonly HarvestPhotoVerificationService $photoVerificationService,
     ) {}
 
     public function execute(
@@ -25,9 +26,10 @@ class RecordHarvestService
         string $harvestDate,
         ?float $qualityGrade = null,
         ?string $notes = null,
+        ?string $photoPath = null,
     ): Harvest {
         // Verify farmer exists
-        $farmer = $this->farmerRepository->findByUserId($farmerId);
+        $farmer = $this->farmerRepository->findById($farmerId);
         if ($farmer === null) {
             throw new FarmerNotFoundException("Farmer not found: {$farmerId}");
         }
@@ -46,6 +48,16 @@ class RecordHarvestService
             qualityGrade: $qualityGrade !== null ? QualityGrade::fromScore($qualityGrade) : null,
             notes: $notes,
         );
+
+        if ($photoPath !== null) {
+            $analysis = $this->photoVerificationService->analyze($photoPath, $cropType, $quantityKg);
+            $harvest->attachPhotoVerification(
+                photoPath: $photoPath,
+                aiEstimatedQuantityKg: $analysis['ai_estimated_quantity_kg'],
+                aiAnalysisNotes: $analysis['ai_analysis_notes'],
+                verificationStatus: $analysis['verification_status'],
+            );
+        }
 
         $this->harvestRepository->save($harvest);
 

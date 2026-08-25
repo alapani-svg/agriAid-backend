@@ -17,5 +17,7 @@ interface StockRepositoryInterface
     
     public function findByStatus(StockStatus $status): array;
     
+    public function findAll(): array;
+    
     public function delete(Stock $stock): void;
 }

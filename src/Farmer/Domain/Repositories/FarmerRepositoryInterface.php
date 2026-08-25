@@ -17,6 +17,8 @@ interface FarmerRepositoryInterface
     
     public function findAllActive(): array;
     
+    public function findAll(): array;
+    
     public function delete(Farmer $farmer): void;
     
     public function existsByUserId(string $userId): bool;

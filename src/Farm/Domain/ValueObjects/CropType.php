@@ -20,12 +20,11 @@ final readonly class CropType
         if (!in_array(strtolower($value), self::VALID_CROPS, true)) {
             throw new \InvalidArgumentException("Invalid crop type: {$value}");
         }
-        $this->value = strtolower($value);
     }
 
     public static function fromString(string $crop): self
     {
-        return new self($crop);
+        return new self(strtolower($crop));
     }
 
     public function toString(): string

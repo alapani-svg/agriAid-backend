@@ -33,6 +33,7 @@ class User extends Authenticatable
         'region',
         'organization',
         'status',
+        'avatar_path',
     ];
 
     protected $hidden = [
@@ -66,5 +67,23 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    public function avatarUrl(): ?string
+    {
+        if (! $this->avatar_path) {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar_path);
+    }
+
+    /**
+     * Whether this user satisfies the given role for authorization purposes.
+     * Admins implicitly satisfy any role check (consistent with EnsureUserRole).
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role || $this->role === 'admin';
     }
 }

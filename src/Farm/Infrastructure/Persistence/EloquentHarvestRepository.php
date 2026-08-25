@@ -32,6 +32,10 @@ class EloquentHarvestRepository implements HarvestRepositoryInterface
         $eloquentHarvest->storage_date = $harvest->getStorageDate()?->format('Y-m-d');
         $eloquentHarvest->status = $harvest->getStatus()->toString();
         $eloquentHarvest->notes = $harvest->getNotes();
+        $eloquentHarvest->photo_path = $harvest->getPhotoPath();
+        $eloquentHarvest->ai_estimated_quantity_kg = $harvest->getAiEstimatedQuantityKg();
+        $eloquentHarvest->ai_analysis_notes = $harvest->getAiAnalysisNotes();
+        $eloquentHarvest->verification_status = $harvest->getVerificationStatus();
         $eloquentHarvest->created_at = $harvest->getCreatedAt()->format('Y-m-d H:i:s');
         $eloquentHarvest->updated_at = $harvest->getUpdatedAt()?->format('Y-m-d H:i:s');
 
@@ -70,6 +74,13 @@ class EloquentHarvestRepository implements HarvestRepositoryInterface
         return $eloquentHarvests->map(fn ($eloquent) => $this->toDomain($eloquent))->toArray();
     }
 
+    public function findAll(): array
+    {
+        $eloquentHarvests = EloquentHarvest::orderByDesc('created_at')->get();
+
+        return $eloquentHarvests->map(fn ($eloquent) => $this->toDomain($eloquent))->toArray();
+    }
+
     public function delete(Harvest $harvest): void
     {
         EloquentHarvest::where('id', $harvest->getId())->delete();
@@ -98,6 +109,17 @@ class EloquentHarvestRepository implements HarvestRepositoryInterface
 
         if ($eloquent->status === HarvestStatus::SOLD->value) {
             $harvest->markAsSold();
+        }
+
+        if ($eloquent->photo_path || $eloquent->verification_status !== 'unavailable') {
+            $harvest->attachPhotoVerification(
+                photoPath: $eloquent->photo_path,
+                aiEstimatedQuantityKg: $eloquent->ai_estimated_quantity_kg !== null
+                    ? (float) $eloquent->ai_estimated_quantity_kg
+                    : null,
+                aiAnalysisNotes: $eloquent->ai_analysis_notes,
+                verificationStatus: $eloquent->verification_status ?? 'unavailable',
+            );
         }
 
         return $harvest;

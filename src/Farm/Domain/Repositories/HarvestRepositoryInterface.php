@@ -17,5 +17,7 @@ interface HarvestRepositoryInterface
     
     public function findByStatus(HarvestStatus $status): array;
     
+    public function findAll(): array;
+    
     public function delete(Harvest $harvest): void;
 }
