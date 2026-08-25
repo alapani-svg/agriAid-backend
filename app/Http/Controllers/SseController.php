@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MarketPrice;
 use App\Models\Notification;
 use Illuminate\Http\Response;
-use Illuminate\Http\StreamedResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SseController extends Controller
 {

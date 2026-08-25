@@ -22,6 +22,7 @@ class PurchaseOrder extends Model
         'delivery_city',
         'delivery_status',
         'payment_status',
+        'payment_method',
         'status',
     ];
 

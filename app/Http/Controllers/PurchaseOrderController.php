@@ -31,6 +31,7 @@ class PurchaseOrderController extends Controller
             'delivery_city' => 'nullable|string|max:255',
             'delivery_status' => 'nullable|string|max:255',
             'payment_status' => 'nullable|string|max:255',
+            'payment_method' => 'nullable|string|in:MoMo,Orange Money,Bank Transfer,Cash on Delivery',
             'status' => 'nullable|string|in:YOUR TURN,PENDING,ACCEPTED',
         ]);
 

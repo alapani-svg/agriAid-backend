@@ -32,6 +32,7 @@ class PurchaseOrderFactory extends Factory
             'delivery_city' => $this->faker->randomElement($cities),
             'delivery_status' => $this->faker->randomElement(['pending', 'shipped', 'delivered']),
             'payment_status' => $this->faker->randomElement(['pending', 'paid', 'escrow']),
+            'payment_method' => $this->faker->randomElement(['MoMo', 'Orange Money', 'Bank Transfer', 'Cash on Delivery']),
             'status' => $this->faker->randomElement(['PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED']),
         ];
     }
