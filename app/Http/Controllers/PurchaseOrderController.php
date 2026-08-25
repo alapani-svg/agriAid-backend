@@ -44,4 +44,26 @@ class PurchaseOrderController extends Controller
 
         return response()->json(new PurchaseOrderResource(PurchaseOrder::create($data)), 201);
     }
+
+    public function update(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
+    {
+        $data = $request->validate([
+            'order_number' => 'sometimes|string|max:255',
+            'buyer_id' => 'nullable|integer|exists:buyers,id',
+            'market_listing_id' => 'nullable|integer|exists:market_listings,id',
+            'commodity' => 'sometimes|string|max:255',
+            'quantity_mt' => 'sometimes|integer|min:1',
+            'price_fcfa_per_mt' => 'sometimes|numeric|min:1',
+            'price_usd_per_mt' => 'nullable|numeric|min:0',
+            'delivery_city' => 'nullable|string|max:255',
+            'delivery_status' => 'nullable|string|max:255',
+            'payment_status' => 'nullable|string|max:255',
+            'payment_method' => 'nullable|string|in:MoMo,Orange Money,Bank Transfer,Cash on Delivery',
+            'status' => 'nullable|string|in:YOUR TURN,PENDING,ACCEPTED',
+        ]);
+
+        $purchaseOrder->update($data);
+
+        return response()->json(new PurchaseOrderResource($purchaseOrder));
+    }
 }

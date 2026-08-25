@@ -44,6 +44,8 @@ Route::apiResource('loan-applications', LoanApplicationController::class)->only(
     'destroy',
 ]);
 
+Route::post('loan-applications/{loan_application}/mark-paid', [LoanApplicationController::class, 'markPaid']);
+
 Route::get('market-prices', [MarketPriceController::class, 'index']);
 Route::post('market-prices', [MarketPriceController::class, 'store']);
 
@@ -51,6 +53,13 @@ Route::post('market-prices', [MarketPriceController::class, 'store']);
 Route::apiResource('institutions', InstitutionController::class)->only([
     'index',
     'store',
+]);
+
+Route::apiResource('locations', LocationController::class)->only([
+    'index',
+    'store',
+    'update',
+    'destroy',
 ]);
 
 Route::apiResource('buyers', BuyerController::class)->only([
@@ -61,6 +70,8 @@ Route::apiResource('buyers', BuyerController::class)->only([
 Route::apiResource('purchase-orders', PurchaseOrderController::class)->only([
     'index',
     'store',
+    'update',
+    'destroy',
 ]);
 Route::apiResource('harvest-records', HarvestRecordController::class)->only([
     'index',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LoanApplication;
 use App\Http\Resources\LoanApplicationResource;
+use App\Services\CredibilityScoreService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -31,6 +32,7 @@ class LoanApplicationController extends Controller
             'buyer_name' => 'required|string|max:255',
             'institution_name' => 'required|string|max:255',
             'warehouse_receipt_id' => 'nullable|integer|exists:warehouse_receipts,id',
+            'collateral_cert_no' => 'nullable|string|max:255',
             'requested_amount_fcfa' => 'required|integer|min:1',
             'requested_amount_usd' => 'nullable|numeric|min:0',
             'term_months' => 'required|integer|min:1|max:240',
@@ -38,6 +40,8 @@ class LoanApplicationController extends Controller
             'status' => 'nullable|string|in:pending,approved,rejected,Active,Pending Review,Repaid,Rejected',
             'repayment_schedule' => 'nullable|array',
         ]);
+
+        $data['score'] = $data['score'] ?? CredibilityScoreService::score($data);
 
         $data['requested_amount_usd'] = $data['requested_amount_usd'] ?? round($data['requested_amount_fcfa'] / self::FCFA_PER_USD, 2);
         $data['principal_usd'] = $data['principal_usd'] ?? $data['requested_amount_usd'];
@@ -90,6 +94,46 @@ class LoanApplicationController extends Controller
         $loanApplication->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function markPaid(Request $request, LoanApplication $loanApplication): JsonResponse
+    {
+        $data = $request->validate([
+            'month' => 'required|integer|min:1',
+        ]);
+
+        $schedule = $loanApplication->repayment_schedule ?? [];
+        $index = null;
+        foreach ($schedule as $i => $item) {
+            if (($item['month'] ?? null) == $data['month']) {
+                $index = $i;
+                break;
+            }
+        }
+
+        if ($index === null) {
+            return response()->json(['message' => 'Month not found'], 404);
+        }
+
+        if (!($schedule[$index]['paid'] ?? false)) {
+            $schedule[$index]['paid'] = true;
+            $dueFcfa = (float) ($schedule[$index]['due_fcfa'] ?? 0);
+            $loanApplication->amount_paid_usd = round(($loanApplication->amount_paid_usd ?? 0) + ($dueFcfa / self::FCFA_PER_USD), 2);
+        }
+
+        $loanApplication->repayment_schedule = $schedule;
+
+        $next = collect($schedule)->firstWhere('paid', false);
+        if ($next) {
+            $loanApplication->next_due_date = now()->addMonths((int) $next['month'])->format('Y-m-d');
+        } else {
+            $loanApplication->next_due_date = null;
+            $loanApplication->status = 'Repaid';
+        }
+
+        $loanApplication->save();
+
+        return response()->json(new LoanApplicationResource($loanApplication));
     }
 
     private function buildSchedule(int $amountFcfa, int $months): array

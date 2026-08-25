@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\CredibilityScoreService;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LoanApplicationResource extends JsonResource
@@ -22,6 +23,9 @@ class LoanApplicationResource extends JsonResource
             'amountPaidFcfa' => (float) round(($this->amount_paid_usd ?? 0) * 655.957),
             'nextDueDate' => $this->next_due_date,
             'institutionName' => $this->institution_name,
+            'repaymentSchedule' => $this->repayment_schedule ?? [],
+            'score' => (int) ($this->score ?? 0),
+            'breakdown' => CredibilityScoreService::breakdown($this->toArray()),
         ];
     }
 }

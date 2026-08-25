@@ -41,9 +41,20 @@ class MarketPriceController extends Controller
         ],
     ];
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $storedPrices = MarketPrice::orderBy('commodity')->get();
+        $commodity = $request->query('commodity');
+        $city = $request->query('city');
+
+        $query = MarketPrice::query()->orderBy('commodity');
+        if ($commodity) {
+            $query->where('commodity', 'like', "%{$commodity}%");
+        }
+        if ($city) {
+            $query->where('city', 'like', "%{$city}%");
+        }
+
+        $storedPrices = $query->get();
 
         if ($storedPrices->isNotEmpty()) {
             return response()->json($storedPrices->map(fn (MarketPrice $item): array => [
@@ -62,6 +73,14 @@ class MarketPriceController extends Controller
             ]));
         }
 
+        $base = self::BASE_MARKET_PRICES;
+        if ($commodity) {
+            $base = array_filter($base, fn ($item) => stripos($item['symbol'], $commodity) !== false);
+        }
+        if ($city) {
+            $base = array_filter($base, fn ($item) => stripos($item['hub'], $city) !== false);
+        }
+
         $items = array_map(function (array $item): array {
             $fluctuation = rand(-40, 40) / 1000.0;
             $trend = $fluctuation >= 0 ? 'up' : 'down';
@@ -78,7 +97,7 @@ class MarketPriceController extends Controller
                 'price_usd_per_mt' => $priceUsd,
                 'price_fcfa_per_mt' => $priceFcfa,
             ];
-        }, self::BASE_MARKET_PRICES);
+        }, array_values($base));
 
         return response()->json($items);
     }
