@@ -23,6 +23,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\PlatformNotificationController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\BuyerController;
+use App\Http\Controllers\FarmerEstatePhotoController;
 use App\Http\Controllers\SseController;
 use App\Http\Controllers\WmsController;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/farmers/by-user/{userId}', [FarmerController::class, 'showByUserId'])->middleware('role:admin');
     Route::get('/farmers/{id}', [FarmerController::class, 'show'])->middleware('role:farmer,admin');
     Route::put('/farmers/{id}', [FarmerController::class, 'update'])->middleware('role:farmer,admin');
+
+    // Farmer estate photos
+    Route::get('/farmer-estate-photos', [FarmerEstatePhotoController::class, 'index'])->middleware('role:farmer');
+    Route::post('/farmer-estate-photos', [FarmerEstatePhotoController::class, 'store'])->middleware('role:farmer');
+    Route::delete('/farmer-estate-photos/{estateId}', [FarmerEstatePhotoController::class, 'destroy'])->middleware('role:farmer');
 
     // Harvest endpoints (farmer only)
     Route::get('/harvests', [HarvestController::class, 'index'])->middleware('role:farmer,admin,warehouse');
