@@ -3,6 +3,16 @@
     $bodyParagraphs = preg_split('/\r\n|\r|\n/', trim($body));
     $bodyParagraphs = array_values(array_filter($bodyParagraphs, fn ($line) => $line !== ''));
     $year = date('Y');
+
+    $logoPath = public_path('images/agriAid-logo.png');
+    if (!file_exists($logoPath)) {
+        $logoPath = public_path('agriAid-logo.png');
+    }
+    $logoBase64 = '';
+    if (file_exists($logoPath)) {
+        $logoData = file_get_contents($logoPath);
+        $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -28,7 +38,11 @@
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
                                     <td style="vertical-align:middle; width:56px;">
-                                        <div style="width:48px; height:48px; background:linear-gradient(135deg, #ffffff 0%, #e8f5e9 100%); border-radius:14px; text-align:center; line-height:48px; font-size:28px; font-weight:900; color:#026e00; font-family:Arial, Helvetica, sans-serif; box-shadow:0 2px 8px rgba(0,0,0,0.15);">A</div>
+                                        @if($logoBase64)
+                                            <img src="{{ $logoBase64 }}" alt="agriAid" style="width:48px; height:48px; object-fit:contain; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.15);" />
+                                        @else
+                                            <div style="width:48px; height:48px; background:linear-gradient(135deg, #ffffff 0%, #e8f5e9 100%); border-radius:14px; text-align:center; line-height:48px; font-size:28px; font-weight:900; color:#026e00; font-family:Arial, Helvetica, sans-serif; box-shadow:0 2px 8px rgba(0,0,0,0.15);">A</div>
+                                        @endif
                                     </td>
                                     <td style="vertical-align:middle; padding-left:16px;">
                                         <p style="margin:0; font-size:24px; font-weight:bold; color:#ffffff; font-family:Arial, Helvetica, sans-serif; letter-spacing:-0.5px;">agriAid</p>

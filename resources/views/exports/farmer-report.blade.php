@@ -7,7 +7,7 @@
         body { color: #1a1a1a; margin: 0; padding: 20px; font-size: 12px; }
         .header { text-align: center; border-bottom: 3px solid #026e00; padding-bottom: 20px; margin-bottom: 25px; }
         .header .logo-wrap { display: flex; justify-content: center; margin-bottom: 10px; }
-        .header .logo { width: 56px; height: 56px; background: linear-gradient(135deg, #026e00 0%, #00b300 100%); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: 900; box-shadow: 0 4px 12px rgba(2,110,0,0.3); }
+        .header .logo { width: 56px; height: 56px; object-fit: contain; border-radius: 12px; box-shadow: 0 4px 12px rgba(2,110,0,0.15); }
         .header h1 { color: #026e00; font-size: 24px; margin: 0; font-weight: 900; letter-spacing: -0.5px; }
         .header .tagline { color: #666; font-size: 10px; margin: 3px 0 0; font-style: italic; }
         .header p { color: #999; font-size: 11px; margin: 8px 0 0; }
@@ -34,8 +34,23 @@
     </style>
 </head>
 <body>
+    @php
+        $logoPath = public_path('images/agriAid-logo.png');
+        if (!file_exists($logoPath)) {
+            $logoPath = public_path('agriAid-logo.png');
+        }
+        $logoBase64 = '';
+        if (file_exists($logoPath)) {
+            $logoData = file_get_contents($logoPath);
+            $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+        }
+    @endphp
     <div class="header">
-        <div class="logo-wrap"><div class="logo">A</div></div>
+        <div class="logo-wrap">
+            @if($logoBase64)
+                <img src="{{ $logoBase64 }}" class="logo" />
+            @endif
+        </div>
         <h1>agriAid Farmer Report</h1>
         <p class="tagline">Empowering Cameroon's Agricultural Future</p>
         <p>Generated on {{ $generatedAt }}</p>
