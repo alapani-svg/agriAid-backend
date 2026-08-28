@@ -31,6 +31,7 @@ use App\Http\Controllers\FarmerExportController;
 use App\Http\Controllers\ReceiptExportController;
 use App\Http\Controllers\CredibilityExportController;
 use App\Http\Controllers\RegionalReportExportController;
+use App\Http\Controllers\FarmerAccessRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth');
@@ -107,6 +108,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/credibility-scores/export-pdf', [CredibilityExportController::class, 'exportPdf'])->middleware('role:admin');
     Route::get('/admin/credibility-scores/export-csv', [CredibilityExportController::class, 'exportCsv'])->middleware('role:admin');
     Route::get('/farmers/{id}/credibility-score', [CredibilityScoreController::class, 'show'])->middleware('role:farmer,admin,lender');
+
+    // Farmer access requests — lender requests temporary profile access, farmer approves/denies
+    Route::get('/farmer-access-requests', [FarmerAccessRequestController::class, 'index'])->middleware('role:lender,farmer,admin');
+    Route::post('/farmer-access-requests', [FarmerAccessRequestController::class, 'store'])->middleware('role:lender');
+    Route::get('/farmer-access-requests/{id}', [FarmerAccessRequestController::class, 'show'])->middleware('role:lender,farmer,admin');
+    Route::put('/farmer-access-requests/{id}/approve', [FarmerAccessRequestController::class, 'approve'])->middleware('role:farmer');
+    Route::put('/farmer-access-requests/{id}/deny', [FarmerAccessRequestController::class, 'deny'])->middleware('role:farmer');
+    Route::put('/farmer-access-requests/{id}/revoke', [FarmerAccessRequestController::class, 'revoke'])->middleware('role:farmer');
+    Route::get('/farmer-access-requests/check/{farmerId}', [FarmerAccessRequestController::class, 'checkAccess'])->middleware('role:lender');
+    Route::get('/farmer-access-requests/{farmerId}/profile', [FarmerAccessRequestController::class, 'viewFarmerProfile'])->middleware('role:lender');
 
     // Admin user management
     Route::get('/admin/users', [AdminUserController::class, 'index'])->middleware('role:admin');
