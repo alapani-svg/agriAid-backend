@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Farmer;
 use App\Models\Harvest;
+use App\Models\Institution;
 use App\Models\LoanApplication;
 use App\Models\Notification;
 use App\Models\Stock;
@@ -25,6 +26,7 @@ class AdminDashboardController extends Controller
             'stocks' => Stock::count(),
             'warehouses' => Warehouse::count(),
             'orders' => StoreOrder::count(),
+            'institutions' => Institution::count(),
             'notifications' => Notification::count(),
             'charts' => $this->buildChartData(),
             'financing' => $this->buildFinancingStats(),
