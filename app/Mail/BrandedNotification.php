@@ -14,6 +14,8 @@ class BrandedNotification extends Mailable
         public string $title,
         public string $body,
         public ?string $recipientName = null,
+        public ?string $actionUrl = null,
+        public ?string $actionLabel = null,
     ) {}
 
     public function build(): self
@@ -24,6 +26,8 @@ class BrandedNotification extends Mailable
                 'title' => $this->title,
                 'body' => $this->body,
                 'recipientName' => $this->recipientName,
+                'actionUrl' => $this->actionUrl,
+                'actionLabel' => $this->actionLabel,
             ]);
     }
 }
