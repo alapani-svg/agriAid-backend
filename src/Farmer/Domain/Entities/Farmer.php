@@ -28,6 +28,8 @@ final class Farmer extends AggregateRoot
         private FarmerStatus $status,
         private readonly \DateTimeImmutable $createdAt,
         private ?\DateTimeImmutable $updatedAt = null,
+        private bool $verified = false,
+        private ?\DateTimeImmutable $verifiedAt = null,
     ) {}
 
     public static function register(
@@ -42,6 +44,10 @@ final class Farmer extends AggregateRoot
         ?string $address = null,
         ?string $cooperativeName = null,
         ?string $cooperativeId = null,
+        ?\DateTimeImmutable $createdAt = null,
+        ?\DateTimeImmutable $updatedAt = null,
+        bool $verified = false,
+        ?\DateTimeImmutable $verifiedAt = null,
     ): self {
         $farmer = new self(
             id: $id,
@@ -56,7 +62,10 @@ final class Farmer extends AggregateRoot
             cooperativeName: $cooperativeName,
             cooperativeId: $cooperativeId,
             status: FarmerStatus::ACTIVE,
-            createdAt: new \DateTimeImmutable(),
+            createdAt: $createdAt ?? new \DateTimeImmutable(),
+            updatedAt: $updatedAt,
+            verified: $verified,
+            verifiedAt: $verifiedAt,
         );
 
         $farmer->recordEvent(new FarmerRegistered($farmer));
@@ -140,6 +149,28 @@ final class Farmer extends AggregateRoot
         $this->recordEvent(new FarmerStatusChanged($this, FarmerStatus::INACTIVE));
     }
 
+    public function verify(): void
+    {
+        if ($this->verified) {
+            return;
+        }
+
+        $this->verified = true;
+        $this->verifiedAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function unverify(): void
+    {
+        if (! $this->verified) {
+            return;
+        }
+
+        $this->verified = false;
+        $this->verifiedAt = null;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
     // Getters
     public function getId(): string
     {
@@ -209,6 +240,16 @@ final class Farmer extends AggregateRoot
     public function getUpdatedAt(): ?\DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->verified;
+    }
+
+    public function getVerifiedAt(): ?\DateTimeImmutable
+    {
+        return $this->verifiedAt;
     }
 
     public function isActive(): bool

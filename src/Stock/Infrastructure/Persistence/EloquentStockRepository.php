@@ -71,6 +71,15 @@ class EloquentStockRepository implements StockRepositoryInterface
         return $this->toDomain($eloquentStock);
     }
 
+    public function findByFarmerId(string $farmerId): array
+    {
+        $eloquentStocks = EloquentStock::whereHas('harvest', function ($q) use ($farmerId) {
+            $q->where('farmer_id', $farmerId);
+        })->orderByDesc('created_at')->get();
+
+        return $eloquentStocks->map(fn ($eloquent) => $this->toDomain($eloquent))->toArray();
+    }
+
     public function findByStatus(StockStatus $status): array
     {
         $eloquentStocks = EloquentStock::where('status', $status->toString())->get();

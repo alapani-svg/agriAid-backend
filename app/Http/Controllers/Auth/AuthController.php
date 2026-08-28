@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\Application\Services\NotificationApplicationService;
 use App\Notifications\Domain\ValueObjects\NotificationType;
+use App\Services\AuditLogger;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -59,13 +60,38 @@ class AuthController extends Controller
 
         $this->otpService->issueAndSend($user, 'login');
 
+        $welcomeTitle = "Welcome to agriAid, {$user->name}!";
+        $welcomeMessage = "Hello {$user->name}, welcome to agriAid — Empowering Cameroon's Agricultural Future. Your account has been created successfully. Start by completing your profile and exploring the platform features available to you as a {$user->role}.";
+
         $this->notificationService->notify(
             user: $user,
             type: NotificationType::WELCOME,
-            title: 'Welcome to agriAid',
-            message: 'Complete your profile and record your first harvest to get started.',
+            title: $welcomeTitle,
+            message: $welcomeMessage,
             deepLink: '/settings',
             idempotencyKey: "welcome:{$user->id}",
+        );
+
+        // Send a branded welcome email directly (in addition to the channel-routed email)
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(
+                new \App\Mail\BrandedNotification(
+                    title: $welcomeTitle,
+                    body: $welcomeMessage,
+                    recipientName: $user->name,
+                )
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('agriAid welcome email failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        AuditLogger::log(
+            action: 'auth.register',
+            category: 'security',
+            metadata: ['user_id' => $user->id, 'email' => $user->email, 'role' => $user->role],
         );
 
         return response()->json([
@@ -109,6 +135,12 @@ class AuthController extends Controller
             }
 
             $access = $this->issueToken($user, $remember);
+
+            AuditLogger::log(
+                action: 'auth.login',
+                category: 'security',
+                metadata: ['user_id' => $user->id, 'email' => $user->email],
+            );
 
             return response()->json([
                 'message' => 'Signed in successfully.',

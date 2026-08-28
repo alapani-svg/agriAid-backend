@@ -27,6 +27,11 @@ class EloquentStoreOrderRepository implements StoreOrderRepositoryInterface
         $eloquent->total_amount = $order->getTotalAmount();
         $eloquent->status = $order->getStatus()->toString();
         $eloquent->notes = $order->getNotes();
+        $eloquent->delivery_method = $order->getDeliveryMethod();
+        $eloquent->delivery_address = $order->getDeliveryAddress();
+        $eloquent->delivery_city = $order->getDeliveryCity();
+        $eloquent->delivery_phone = $order->getDeliveryPhone();
+        $eloquent->delivery_notes = $order->getDeliveryNotes();
         $eloquent->created_at = $order->getCreatedAt()->format('Y-m-d H:i:s');
         $eloquent->updated_at = $order->getUpdatedAt()?->format('Y-m-d H:i:s');
 
@@ -47,6 +52,7 @@ class EloquentStoreOrderRepository implements StoreOrderRepositoryInterface
     public function findByBuyerId(string $buyerId): array
     {
         return EloquentStoreOrder::where('buyer_id', $buyerId)
+            ->orderByDesc('created_at')
             ->get()
             ->map(fn ($eloquent) => $this->toDomain($eloquent))
             ->toArray();
@@ -83,18 +89,26 @@ class EloquentStoreOrderRepository implements StoreOrderRepositoryInterface
             pricePerKg: $eloquent->price_per_kg !== null ? (float) $eloquent->price_per_kg : null,
             totalAmount: $eloquent->total_amount !== null ? (float) $eloquent->total_amount : null,
             notes: $eloquent->notes,
+            deliveryMethod: $eloquent->delivery_method,
+            deliveryAddress: $eloquent->delivery_address,
+            deliveryPhone: $eloquent->delivery_phone,
+            deliveryCity: $eloquent->delivery_city,
+            deliveryNotes: $eloquent->delivery_notes,
         );
 
-        if ($eloquent->status === StoreOrderStatus::CONFIRMED->value) {
+        $status = $eloquent->status;
+        if ($status === StoreOrderStatus::FARMER_CONFIRMED->value) {
+            $order->farmerConfirm();
+        } elseif ($status === StoreOrderStatus::CONFIRMED->value) {
             $order->confirm();
-        }
-
-        if ($eloquent->status === StoreOrderStatus::CANCELLED->value) {
-            $order->cancel();
-        }
-
-        if ($eloquent->status === StoreOrderStatus::COMPLETED->value) {
+        } elseif ($status === StoreOrderStatus::SHIPPED->value) {
+            $order->ship();
+        } elseif ($status === StoreOrderStatus::DELIVERED->value) {
+            $order->deliver();
+        } elseif ($status === StoreOrderStatus::COMPLETED->value) {
             $order->complete();
+        } elseif ($status === StoreOrderStatus::CANCELLED->value) {
+            $order->cancel();
         }
 
         return $order;

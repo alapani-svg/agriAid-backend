@@ -21,10 +21,13 @@ class StockController
         $warehouseId = $request->query('warehouse_id');
         $status = $request->query('status');
         $harvestId = $request->query('harvest_id');
+        $farmerId = $request->query('farmer_id');
         $all = $request->query('all');
 
         if ($all && $request->user()?->role === 'admin') {
             $stocks = $this->stockRepository->findAll();
+        } elseif ($farmerId) {
+            $stocks = $this->stockRepository->findByFarmerId($farmerId);
         } elseif ($harvestId) {
             $stock = $this->stockRepository->findByHarvestId($harvestId);
             $stocks = $stock ? [$stock] : [];
@@ -93,6 +96,9 @@ class StockController
      */
     private function toArray(\App\Stock\Domain\Entities\Stock $stock): array
     {
+        // Load the Eloquent model to access validation fields (not part of the domain entity)
+        $eloquent = \App\Models\Stock::find($stock->getId());
+
         return [
             'id' => $stock->getId(),
             'warehouse_id' => $stock->getWarehouseId(),
@@ -112,6 +118,11 @@ class StockController
             'ai_estimated_quantity_kg' => $stock->getAiEstimatedQuantityKg(),
             'ai_analysis_notes' => $stock->getAiAnalysisNotes(),
             'verification_status' => $stock->getVerificationStatus(),
+            'validation_status' => $eloquent?->validation_status ?? 'pending',
+            'validation_notes' => $eloquent?->validation_notes,
+            'price_per_kg' => $eloquent?->price_per_kg !== null ? (float) $eloquent->price_per_kg : null,
+            'currency' => $eloquent?->currency ?? 'FCFA',
+            'seller_id' => $eloquent?->seller_id,
             'created_at' => $stock->getCreatedAt()->format('Y-m-d H:i:s'),
             'updated_at' => $stock->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];

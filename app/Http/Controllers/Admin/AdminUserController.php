@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -82,6 +83,14 @@ class AdminUserController extends Controller
             'status' => $data['status'] ?? 'active',
         ]);
 
+        AuditLogger::log(
+            action: 'user.created',
+            category: 'user',
+            metadata: ['user_id' => $user->id, 'email' => $user->email, 'role' => $user->role],
+            auditableType: User::class,
+            auditableId: (int) $user->id,
+        );
+
         return response()->json($this->payload($user), 201);
     }
 
@@ -119,6 +128,26 @@ class AdminUserController extends Controller
 
         $user->save();
 
+        if (array_key_exists('role', $data)) {
+            AuditLogger::log(
+                action: 'user.role_changed',
+                category: 'security',
+                metadata: ['user_id' => $user->id, 'new_role' => $user->role],
+                auditableType: User::class,
+                auditableId: (int) $user->id,
+            );
+        }
+
+        if (array_key_exists('status', $data)) {
+            AuditLogger::log(
+                action: 'user.status_changed',
+                category: 'user',
+                metadata: ['user_id' => $user->id, 'new_status' => $user->status],
+                auditableType: User::class,
+                auditableId: (int) $user->id,
+            );
+        }
+
         return response()->json($this->payload($user));
     }
 
@@ -136,6 +165,14 @@ class AdminUserController extends Controller
 
         $user->tokens()->delete();
         $user->delete();
+
+        AuditLogger::log(
+            action: 'user.deleted',
+            category: 'security',
+            metadata: ['user_id' => $id, 'email' => $user->email],
+            auditableType: User::class,
+            auditableId: (int) $id,
+        );
 
         return response()->json(['message' => 'User deleted.']);
     }

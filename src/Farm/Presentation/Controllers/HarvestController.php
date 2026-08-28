@@ -37,13 +37,16 @@ class HarvestController
             return response()->json(['errors' => $errors], 422);
         }
 
-        if ($request->hasFile('photo') && !$request->file('photo')->isValid()) {
+        // Photo is required — a harvest cannot be recorded without visual proof of the crop
+        if (!$request->hasFile('photo')) {
+            return response()->json(['errors' => ['photo' => 'A photo of the harvested crop is required.']], 422);
+        }
+
+        if (!$request->file('photo')->isValid()) {
             return response()->json(['errors' => ['photo' => 'The uploaded photo is invalid.']], 422);
         }
 
-        $photoPath = $request->hasFile('photo')
-            ? $request->file('photo')->store('harvest-photos', 'public')
-            : null;
+        $photoPath = $request->file('photo')->store('harvest-photos', 'public');
 
         try {
             $harvest = $this->recordHarvestService->execute(

@@ -173,6 +173,8 @@ class WarehouseController
             }
         }
 
+        $store = \App\Models\Store::where('warehouse_id', $warehouse->getId())->first();
+
         return [
             'id' => $warehouse->getId(),
             'manager_user_id' => $warehouse->getManagerUserId(),
@@ -190,6 +192,13 @@ class WarehouseController
             'notes' => $warehouse->getNotes(),
             'created_at' => $warehouse->getCreatedAt()->format('Y-m-d H:i:s'),
             'updated_at' => $warehouse->getUpdatedAt()?->format('Y-m-d H:i:s'),
+            'store' => $store ? [
+                'id' => $store->id,
+                'name' => $store->name,
+                'slug' => $store->slug,
+                'description' => $store->description,
+                'status' => $store->status,
+            ] : null,
         ];
     }
 }

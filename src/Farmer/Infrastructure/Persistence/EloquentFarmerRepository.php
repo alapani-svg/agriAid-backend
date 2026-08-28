@@ -34,6 +34,8 @@ class EloquentFarmerRepository implements FarmerRepositoryInterface
         $eloquentFarmer->cooperative_name = $farmer->getCooperativeName();
         $eloquentFarmer->cooperative_id = $farmer->getCooperativeId();
         $eloquentFarmer->status = $farmer->getStatus()->toString();
+        $eloquentFarmer->verified = $farmer->isVerified();
+        $eloquentFarmer->verified_at = $farmer->getVerifiedAt()?->format('Y-m-d H:i:s');
         $eloquentFarmer->created_at = $farmer->getCreatedAt()->format('Y-m-d H:i:s');
         $eloquentFarmer->updated_at = $farmer->getUpdatedAt()?->format('Y-m-d H:i:s');
 
@@ -95,6 +97,18 @@ class EloquentFarmerRepository implements FarmerRepositoryInterface
 
     private function toDomain(EloquentFarmer $eloquent): Farmer
     {
+        $createdAt = $eloquent->created_at
+            ? \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $eloquent->created_at->format('Y-m-d H:i:s'))
+            : null;
+
+        $updatedAt = $eloquent->updated_at
+            ? \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $eloquent->updated_at->format('Y-m-d H:i:s'))
+            : null;
+
+        $verifiedAt = $eloquent->verified_at
+            ? \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $eloquent->verified_at->format('Y-m-d H:i:s'))
+            : null;
+
         return Farmer::register(
             id: $eloquent->id,
             userId: $eloquent->user_id,
@@ -107,6 +121,10 @@ class EloquentFarmerRepository implements FarmerRepositoryInterface
             address: $eloquent->address,
             cooperativeName: $eloquent->cooperative_name,
             cooperativeId: $eloquent->cooperative_id,
+            createdAt: $createdAt ?: null,
+            updatedAt: $updatedAt ?: null,
+            verified: (bool) $eloquent->verified,
+            verifiedAt: $verifiedAt ?: null,
         );
     }
 }

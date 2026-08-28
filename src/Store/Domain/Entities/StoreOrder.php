@@ -17,6 +17,11 @@ final class StoreOrder extends AggregateRoot
         private ?float $totalAmount,
         private StoreOrderStatus $status,
         private ?string $notes,
+        private ?string $deliveryMethod,
+        private ?string $deliveryAddress,
+        private ?string $deliveryPhone,
+        private ?string $deliveryCity,
+        private ?string $deliveryNotes,
         private readonly \DateTimeImmutable $createdAt,
         private ?\DateTimeImmutable $updatedAt = null,
     ) {}
@@ -29,6 +34,11 @@ final class StoreOrder extends AggregateRoot
         ?float $pricePerKg = null,
         ?float $totalAmount = null,
         ?string $notes = null,
+        ?string $deliveryMethod = null,
+        ?string $deliveryAddress = null,
+        ?string $deliveryPhone = null,
+        ?string $deliveryCity = null,
+        ?string $deliveryNotes = null,
     ): self {
         $order = new self(
             id: $id,
@@ -39,6 +49,11 @@ final class StoreOrder extends AggregateRoot
             totalAmount: $totalAmount,
             status: StoreOrderStatus::PENDING,
             notes: $notes,
+            deliveryMethod: $deliveryMethod,
+            deliveryAddress: $deliveryAddress,
+            deliveryPhone: $deliveryPhone,
+            deliveryCity: $deliveryCity,
+            deliveryNotes: $deliveryNotes,
             createdAt: new \DateTimeImmutable(),
         );
 
@@ -53,15 +68,33 @@ final class StoreOrder extends AggregateRoot
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public function cancel(): void
+    public function farmerConfirm(): void
     {
-        $this->status = StoreOrderStatus::CANCELLED;
+        $this->status = StoreOrderStatus::FARMER_CONFIRMED;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function ship(): void
+    {
+        $this->status = StoreOrderStatus::SHIPPED;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function deliver(): void
+    {
+        $this->status = StoreOrderStatus::DELIVERED;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function complete(): void
     {
         $this->status = StoreOrderStatus::COMPLETED;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function cancel(): void
+    {
+        $this->status = StoreOrderStatus::CANCELLED;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -104,6 +137,31 @@ final class StoreOrder extends AggregateRoot
     public function getNotes(): ?string
     {
         return $this->notes;
+    }
+
+    public function getDeliveryMethod(): ?string
+    {
+        return $this->deliveryMethod;
+    }
+
+    public function getDeliveryAddress(): ?string
+    {
+        return $this->deliveryAddress;
+    }
+
+    public function getDeliveryPhone(): ?string
+    {
+        return $this->deliveryPhone;
+    }
+
+    public function getDeliveryCity(): ?string
+    {
+        return $this->deliveryCity;
+    }
+
+    public function getDeliveryNotes(): ?string
+    {
+        return $this->deliveryNotes;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

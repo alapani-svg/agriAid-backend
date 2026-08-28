@@ -24,6 +24,8 @@ class Farmer extends Model
         'cooperative_name',
         'cooperative_id',
         'status',
+        'verified',
+        'verified_at',
     ];
 
     protected function casts(): array
@@ -31,6 +33,8 @@ class Farmer extends Model
         return [
             'crops' => 'array',
             'farm_size' => 'decimal:2',
+            'verified' => 'boolean',
+            'verified_at' => 'datetime',
         ];
     }
 

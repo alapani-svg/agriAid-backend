@@ -15,6 +15,8 @@ class EloquentWarehouseRepository implements WarehouseRepositoryInterface
             ->where('id', $warehouse->getId())
             ->first();
 
+        $isNew = $eloquentWarehouse === null;
+
         if ($eloquentWarehouse === null) {
             $eloquentWarehouse = new EloquentWarehouse();
             $eloquentWarehouse->id = $warehouse->getId();
@@ -35,6 +37,21 @@ class EloquentWarehouseRepository implements WarehouseRepositoryInterface
         $eloquentWarehouse->updated_at = $warehouse->getUpdatedAt()?->format('Y-m-d H:i:s');
 
         $eloquentWarehouse->save();
+
+        // Auto-create a store named after the warehouse when a new warehouse is registered
+        if ($isNew && $eloquentWarehouse->farmer_id !== null) {
+            \App\Models\Store::firstOrCreate(
+                ['warehouse_id' => $eloquentWarehouse->id],
+                [
+                    'farmer_id' => $eloquentWarehouse->farmer_id,
+                    'name' => $eloquentWarehouse->name . ' Store',
+                    'slug' => \Illuminate\Support\Str::slug($eloquentWarehouse->name) . '-' . substr((string) \Illuminate\Support\Str::uuid(), 0, 8),
+                    'description' => 'Fresh produce from ' . $eloquentWarehouse->name,
+                    'status' => 'active',
+                    'theme_color' => '#026e00',
+                ],
+            );
+        }
     }
 
     public function findById(string $id): ?Warehouse

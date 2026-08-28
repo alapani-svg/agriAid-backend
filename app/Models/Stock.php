@@ -15,6 +15,7 @@ class Stock extends Model
 
     protected $fillable = [
         'warehouse_id',
+        'store_id',
         'harvest_id',
         'crop_type',
         'variety',
@@ -40,7 +41,21 @@ class Stock extends Model
         'ai_estimated_quantity_kg',
         'ai_analysis_notes',
         'verification_status',
+        'validation_status',
+        'validated_by',
+        'validated_at',
+        'validation_notes',
     ];
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
 
     protected function casts(): array
     {
@@ -57,6 +72,7 @@ class Stock extends Model
             'entry_date' => 'date',
             'exit_date' => 'date',
             'ai_estimated_quantity_kg' => 'decimal:2',
+            'validated_at' => 'datetime',
         ];
     }
 

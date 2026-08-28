@@ -13,11 +13,30 @@ class ListAvailableStoreStockService
      */
     public function execute(): array
     {
+        return $this->query(true);
+    }
+
+    /**
+     * Admin variant — returns ALL stock regardless of validation status.
+     * @return array<int, array<string, mixed>>
+     */
+    public function executeForAdmin(): array
+    {
+        return $this->query(false);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function query(bool $approvedOnly): array
+    {
         /** @var Collection $stocks */
-        $stocks = EloquentStock::with(['harvest.farmer', 'warehouse', 'seller'])
+        $stocks = EloquentStock::with(['harvest.farmer', 'warehouse', 'seller', 'store'])
             ->where('status', 'in_stock')
             ->where('quantity_kg', '>', 0)
-            ->orderBy('created_at', 'desc')
+            ->whereNotNull('price_per_kg')
+            ->when($approvedOnly, fn ($q) => $q->where('validation_status', 'approved'))
+            ->orderByDesc('created_at')
             ->get();
 
         return $stocks->map(function ($stock) {
@@ -60,6 +79,8 @@ class ListAvailableStoreStockService
                 'seller_name' => $sellerName,
                 'seller_cooperative' => $sellerCooperative,
                 'seller_status' => $sellerStatus,
+                'store_id' => $stock->store_id,
+                'store_name' => $stock->store?->name,
                 'is_urgent_sale' => $isUrgent,
                 'flash_discount_percent' => $discount,
                 'flash_discount_expires_at' => $stock->flash_discount_expires_at?->format('Y-m-d H:i:s'),
@@ -71,6 +92,8 @@ class ListAvailableStoreStockService
                 'ai_estimated_quantity_kg' => $stock->ai_estimated_quantity_kg !== null ? (float) $stock->ai_estimated_quantity_kg : null,
                 'ai_analysis_notes' => $stock->ai_analysis_notes,
                 'verification_status' => $stock->verification_status ?? 'unavailable',
+                'validation_status' => $stock->validation_status ?? 'pending',
+                'is_verified' => $stock->validation_status === 'approved',
                 'created_at' => $stock->created_at?->format('Y-m-d H:i:s'),
                 'updated_at' => $stock->updated_at?->format('Y-m-d H:i:s'),
             ];

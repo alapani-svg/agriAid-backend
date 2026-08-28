@@ -14,6 +14,8 @@ interface StockRepositoryInterface
     public function findByWarehouseId(string $warehouseId): array;
     
     public function findByHarvestId(string $harvestId): ?Stock;
+
+    public function findByFarmerId(string $farmerId): array;
     
     public function findByStatus(StockStatus $status): array;
     

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StoreOrder extends Model
 {
-    public const STATUSES = ['pending', 'confirmed', 'cancelled', 'completed'];
+    public const STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'completed', 'cancelled'];
 
     public $incrementing = false;
 
@@ -21,6 +21,11 @@ class StoreOrder extends Model
         'total_amount',
         'status',
         'notes',
+        'delivery_method',
+        'delivery_address',
+        'delivery_city',
+        'delivery_phone',
+        'delivery_notes',
     ];
 
     protected function casts(): array
