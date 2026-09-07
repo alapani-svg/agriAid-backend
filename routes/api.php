@@ -32,6 +32,7 @@ use App\Http\Controllers\ReceiptExportController;
 use App\Http\Controllers\CredibilityExportController;
 use App\Http\Controllers\RegionalReportExportController;
 use App\Http\Controllers\FarmerAccessRequestController;
+use App\Http\Controllers\ImageVerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth');
@@ -81,6 +82,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/stocks', [StockController::class, 'index'])->middleware('role:farmer,admin,warehouse');
     Route::get('/stocks/{id}', [StockController::class, 'show'])->middleware('role:farmer,admin,warehouse');
     Route::post('/stocks/{id}/verify-photo', [StockController::class, 'verifyPhoto'])->middleware('role:farmer,admin,warehouse');
+
+    // Image-to-name/description verification (AI crop/product recognition)
+    Route::post('/verify-image', [ImageVerificationController::class, 'verify'])->middleware('role:farmer,admin,warehouse,buyer');
+    Route::post('/stocks/{id}/verify-match', [ImageVerificationController::class, 'verifyStock'])->middleware('role:farmer,admin,warehouse');
 
     // Warehouse endpoints
     Route::post('/warehouses', [WarehouseController::class, 'register'])->middleware('role:farmer,admin,warehouse');

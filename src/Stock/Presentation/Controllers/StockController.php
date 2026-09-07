@@ -2,6 +2,7 @@
 
 namespace App\Stock\Presentation\Controllers;
 
+use App\Services\ImageNameDescriptionMatcher;
 use App\Stock\Application\Services\StockPhotoVerificationService;
 use App\Stock\Domain\Repositories\StockRepositoryInterface;
 use App\Stock\Domain\ValueObjects\StockStatus;
@@ -14,6 +15,7 @@ class StockController
     public function __construct(
         private readonly StockRepositoryInterface $stockRepository,
         private readonly StockPhotoVerificationService $photoVerificationService,
+        private readonly ImageNameDescriptionMatcher $imageMatcher,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -88,6 +90,20 @@ class StockController
 
         $this->stockRepository->save($stock);
 
+        // Run image-to-name/description matching against crop/variety and notes
+        $eloquentStock = \App\Models\Stock::find($stock->getId());
+        if ($eloquentStock) {
+            $name = $eloquentStock->variety
+                ? "{$eloquentStock->crop_type} ({$eloquentStock->variety})"
+                : $eloquentStock->crop_type;
+            $match = $this->imageMatcher->analyze($photoPath, $name, $eloquentStock->notes ?? '');
+            $eloquentStock->image_match_score = $match['score'];
+            $eloquentStock->image_match_status = $match['matches'] ? 'matches' : ($match['score'] >= 50 ? 'uncertain' : 'mismatched');
+            $eloquentStock->image_match_reasoning = $match['reasoning'];
+            $eloquentStock->image_match_confidence = $match['confidence'];
+            $eloquentStock->save();
+        }
+
         return response()->json($this->toArray($stock), 200);
     }
 
@@ -123,6 +139,10 @@ class StockController
             'price_per_kg' => $eloquent?->price_per_kg !== null ? (float) $eloquent->price_per_kg : null,
             'currency' => $eloquent?->currency ?? 'FCFA',
             'seller_id' => $eloquent?->seller_id,
+            'image_match_score' => $eloquent?->image_match_score,
+            'image_match_status' => $eloquent?->image_match_status,
+            'image_match_reasoning' => $eloquent?->image_match_reasoning,
+            'image_match_confidence' => $eloquent?->image_match_confidence,
             'created_at' => $stock->getCreatedAt()->format('Y-m-d H:i:s'),
             'updated_at' => $stock->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];

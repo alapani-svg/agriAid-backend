@@ -94,6 +94,10 @@ class ListAvailableStoreStockService
                 'verification_status' => $stock->verification_status ?? 'unavailable',
                 'validation_status' => $stock->validation_status ?? 'pending',
                 'is_verified' => $stock->validation_status === 'approved',
+                'image_match_score' => $stock->image_match_score,
+                'image_match_status' => $stock->image_match_status,
+                'image_match_reasoning' => $stock->image_match_reasoning,
+                'image_match_confidence' => $stock->image_match_confidence,
                 'created_at' => $stock->created_at?->format('Y-m-d H:i:s'),
                 'updated_at' => $stock->updated_at?->format('Y-m-d H:i:s'),
             ];
