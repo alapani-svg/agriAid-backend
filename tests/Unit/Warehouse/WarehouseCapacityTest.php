@@ -111,7 +111,9 @@ final class WarehouseCapacityTest extends TestCase
             public function findById(string $id): ?Warehouse { return $this->warehouse; }
             public function findByRegion(string $region): array { return array_filter([$this->warehouse]); }
             public function findAllActive(): array { return array_filter([$this->warehouse]); }
+            public function findAll(): array { return array_filter([$this->warehouse]); }
             public function findByManagerUserId(string $managerUserId): array { return array_filter([$this->warehouse]); }
+            public function findByFarmerId(string $farmerId): array { return array_filter([$this->warehouse]); }
             public function delete(Warehouse $warehouse): void {}
         };
     }
@@ -129,6 +131,7 @@ final class WarehouseCapacityTest extends TestCase
             public function findById(string $id): ?Stock { return null; }
             public function findByWarehouseId(string $warehouseId): array { return $this->existingStocks; }
             public function findByHarvestId(string $harvestId): ?Stock { return null; }
+            public function findByFarmerId(string $farmerId): array { return $this->existingStocks; }
             public function findByStatus(StockStatus $status): array { return $this->existingStocks; }
             public function findAll(): array { return $this->existingStocks; }
             public function delete(Stock $stock): void {}

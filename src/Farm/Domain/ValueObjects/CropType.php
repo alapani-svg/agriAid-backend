@@ -6,9 +6,10 @@ final readonly class CropType
 {
     private const VALID_CROPS = [
         'maize', 'rice', 'cassava', 'yam', 'plantain',
-        'beans', 'groundnuts', 'soybeans', 'cocoa', 'coffee',
+        'beans', 'groundnuts', 'soybean', 'soybeans', 'cocoa', 'coffee',
         'palm_oil', 'rubber', 'banana', 'tomato', 'onion',
-        'pepper', 'vegetables', 'fruits', 'sorghum', 'millet'
+        'pepper', 'cucumber', 'vegetables', 'fruits', 'sorghum', 'millet',
+        'sweet_potato', 'irish_potato', 'watermelon', 'papaya', 'cabbage'
     ];
 
     private function __construct(

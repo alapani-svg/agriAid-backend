@@ -90,21 +90,27 @@ class ImageNameDescriptionMatcher
             $mime = Storage::disk('public')->mimeType($storagePath) ?: 'image/jpeg';
             $base64Image = base64_encode($imageContents);
 
+            $cropList = implode(', ', array_keys(self::CROP_KEYWORDS));
+
             $response = Http::withToken($apiKey)
                 ->timeout(45)
                 ->post('https://api.openai.com/v1/chat/completions', [
                     'model' => config('services.openai.vision_model', 'gpt-4o-mini'),
                     'response_format' => ['type' => 'json_object'],
-                    'max_tokens' => 400,
+                    'max_tokens' => 500,
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'You are an agricultural product verification AI. Examine the photo and compare it '
-                                . 'to the product name and description provided by the farmer. '
+                            'content' => 'You are an agricultural product verification AI. '
+                                . 'First, identify the produce shown in the photo. '
+                                . 'Choose the single best match from this list: ' . $cropList . '. '
+                                . 'If none match, use "other". '
+                                . 'Then compare your identification to the product name and description provided by the seller. '
                                 . 'Respond with strict JSON only, in the shape: '
-                                . '{"matches": boolean, "confidence": "low"|"medium"|"high", "score": number 0-100, "reasoning": string}. '
-                                . 'Score 80-100 for clear matches, 50-79 for partial/unclear matches, 0-49 for mismatches. '
-                                . 'Be strict: if the image clearly shows a different product than the declared name, set matches=false.',
+                                . '{"identified_crop": string, "matches": boolean, "confidence": "low"|"medium"|"high", "score": number 0-100, "reasoning": string}. '
+                                . 'Set matches=true only when the image clearly and specifically depicts the declared crop/variety. '
+                                . 'Score 80-100 for a clear visual match, 50-79 for uncertain or partial matches, 0-49 for a clear mismatch. '
+                                . 'Be strict: generic / stock / unrelated images must be marked mismatched.',
                         ],
                         [
                             'role' => 'user',
@@ -112,7 +118,10 @@ class ImageNameDescriptionMatcher
                                 [
                                     'type' => 'text',
                                     'text' => sprintf(
-                                        "Product name: %s\nDescription: %s\n\nDoes this image visually match the declared product? Explain briefly.",
+                                        "Declared product name: %s\nDeclared description: %s\n\n"
+                                        . 'Identify the crop in the image from the allowed list, '
+                                        . 'then decide whether the photo clearly matches the declared name and description. '
+                                        . 'Briefly justify your decision.',
                                         $name,
                                         $description ?: 'No description provided',
                                     ),
@@ -146,7 +155,12 @@ class ImageNameDescriptionMatcher
                 ? $parsed['confidence']
                 : self::CONFIDENCE_LOW;
             $score = isset($parsed['score']) ? max(0, min(100, (int) $parsed['score'])) : 0;
+            $identifiedCrop = isset($parsed['identified_crop']) ? (string) $parsed['identified_crop'] : 'unknown';
             $reasoning = isset($parsed['reasoning']) ? (string) $parsed['reasoning'] : 'No reasoning provided.';
+
+            if ($identifiedCrop !== 'unknown') {
+                $reasoning = "Identified: {$identifiedCrop}. " . $reasoning;
+            }
 
             return $this->result($matches, $confidence, $score, $reasoning);
         } catch (\Throwable $e) {

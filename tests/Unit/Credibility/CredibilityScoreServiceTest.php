@@ -91,6 +91,7 @@ final class CredibilityScoreServiceTest extends TestCase
                 public function findById(string $id): ?Stock { return null; }
                 public function findByWarehouseId(string $warehouseId): array { return []; }
                 public function findByHarvestId(string $harvestId): ?Stock { return null; }
+                public function findByFarmerId(string $farmerId): array { return []; }
                 public function findByStatus(\App\Stock\Domain\ValueObjects\StockStatus $status): array { return []; }
                 public function findAll(): array { return []; }
                 public function delete(Stock $stock): void {}
@@ -131,6 +132,7 @@ final class CredibilityScoreServiceTest extends TestCase
                 public function findById(string $id): ?Stock { return null; }
                 public function findByWarehouseId(string $warehouseId): array { return []; }
                 public function findByHarvestId(string $harvestId): ?Stock { return null; }
+                public function findByFarmerId(string $farmerId): array { return []; }
                 public function findByStatus(\App\Stock\Domain\ValueObjects\StockStatus $status): array { return []; }
                 public function findAll(): array { return []; }
                 public function delete(Stock $stock): void {}
@@ -199,6 +201,7 @@ final class CredibilityScoreServiceTest extends TestCase
                 public function findById(string $id): ?Stock { return null; }
                 public function findByWarehouseId(string $warehouseId): array { return array_values($this->stocksByHarvestId); }
                 public function findByHarvestId(string $harvestId): ?Stock { return $this->stocksByHarvestId[$harvestId] ?? null; }
+                public function findByFarmerId(string $farmerId): array { return array_values($this->stocksByHarvestId); }
                 public function findByStatus(\App\Stock\Domain\ValueObjects\StockStatus $status): array { return array_values($this->stocksByHarvestId); }
                 public function findAll(): array { return array_values($this->stocksByHarvestId); }
                 public function delete(Stock $stock): void {}
@@ -257,6 +260,7 @@ final class CredibilityScoreServiceTest extends TestCase
                 public function findById(string $id): ?Stock { return null; }
                 public function findByWarehouseId(string $warehouseId): array { return []; }
                 public function findByHarvestId(string $harvestId): ?Stock { return null; }
+                public function findByFarmerId(string $farmerId): array { return []; }
                 public function findByStatus(\App\Stock\Domain\ValueObjects\StockStatus $status): array { return []; }
                 public function findAll(): array { return []; }
                 public function delete(Stock $stock): void {}

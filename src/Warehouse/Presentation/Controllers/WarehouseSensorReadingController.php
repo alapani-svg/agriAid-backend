@@ -6,6 +6,7 @@ use App\Models\Warehouse;
 use App\Models\WarehouseSensorReading;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -19,6 +20,12 @@ class WarehouseSensorReadingController
     {
         if (Warehouse::find($warehouseId) === null) {
             return response()->json(['error' => 'Warehouse not found'], 404);
+        }
+
+        // Older deployments may not have run the telemetry migration yet.
+        // Treat that optional module as empty instead of exposing a SQL error.
+        if (!Schema::hasTable('warehouse_sensor_readings')) {
+            return response()->json(['data' => []]);
         }
 
         $limit = min(200, max(1, (int) $request->query('limit', 20)));
@@ -37,6 +44,12 @@ class WarehouseSensorReadingController
     {
         if (Warehouse::find($warehouseId) === null) {
             return response()->json(['error' => 'Warehouse not found'], 404);
+        }
+
+        if (!Schema::hasTable('warehouse_sensor_readings')) {
+            return response()->json([
+                'error' => 'Warehouse telemetry is not enabled on this deployment.',
+            ], 503);
         }
 
         $data = $request->validate([

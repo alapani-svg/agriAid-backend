@@ -10,13 +10,24 @@ return new class extends Migration
     {
         // Drop the foreign key constraint first, then the unique index, then make nullable
         Schema::table('stores', function (Blueprint $table) {
-            // Find and drop the foreign key by searching for it
-            $foreignKeys = collect(\DB::select("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'stores' AND COLUMN_NAME = 'warehouse_id' AND REFERENCED_TABLE_NAME IS NOT NULL"));
-            foreach ($foreignKeys as $fk) {
-                $table->dropForeign($fk->CONSTRAINT_NAME);
+            $driver = \DB::getDriverName();
+
+            // SQLite (used in tests) doesn't support information_schema or dropForeign
+            if ($driver !== 'sqlite') {
+                $foreignKeys = collect(\DB::select(
+                    "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'stores' AND COLUMN_NAME = 'warehouse_id' AND REFERENCED_TABLE_NAME IS NOT NULL"
+                ));
+                foreach ($foreignKeys as $fk) {
+                    $table->dropForeign($fk->CONSTRAINT_NAME);
+                }
             }
-            // Drop the unique constraint
-            $table->dropUnique(['warehouse_id']);
+
+            // Drop the unique constraint (guard for SQLite where it may not exist)
+            try {
+                $table->dropUnique(['warehouse_id']);
+            } catch (\Throwable $e) {
+                // Index may not exist in SQLite — safe to ignore.
+            }
         });
 
         Schema::table('stores', function (Blueprint $table) {

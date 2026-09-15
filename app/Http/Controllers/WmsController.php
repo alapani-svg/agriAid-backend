@@ -9,6 +9,7 @@ use App\Models\WarehouseSensorReading;
 use App\Models\WmsAlert;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class WmsController extends Controller
 {
@@ -346,6 +347,10 @@ class WmsController extends Controller
      */
     private function latestReadingsByWarehouse(): array
     {
+        if (! Schema::hasTable('warehouse_sensor_readings')) {
+            return [];
+        }
+
         // Single query: get the latest reading per warehouse using a subquery
         $latest = WarehouseSensorReading::query()
             ->select('warehouse_id', 'temperature_celsius', 'moisture_pct', 'recorded_at')
